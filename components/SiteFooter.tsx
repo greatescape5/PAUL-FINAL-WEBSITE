@@ -17,6 +17,7 @@ export default function SiteFooter() {
           <div>
             <h4>Explore</h4>
             <p style={{ margin: '0 0 6px' }}><Link href="/">Home</Link></p>
+            <p style={{ margin: '0 0 6px' }}><Link href="/programs">Programs</Link></p>
             <p style={{ margin: '0 0 6px' }}><Link href="/about">About</Link></p>
             <p style={{ margin: 0 }}><Link href="/contact">Contact</Link></p>
           </div>

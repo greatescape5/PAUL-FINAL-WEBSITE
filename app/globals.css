@@ -474,6 +474,48 @@ input:focus, select:focus, textarea:focus {
 }
 .ig-tile:hover .ig-tile-ic { opacity: 1; background: rgba(30, 45, 66, 0.4); }
 
+/* ---------- Programs (listing + detail) ---------- */
+.program-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; align-items: stretch; }
+.program-card {
+  position: relative; display: flex; flex-direction: column;
+  background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+.program-card.featured { border-color: var(--red); box-shadow: 0 16px 40px rgba(181, 31, 33, 0.16); }
+.program-flag {
+  position: absolute; top: 14px; right: 14px; z-index: 2;
+  background: var(--red); color: #fff; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 12px; border-radius: 999px;
+}
+.program-cover { height: 176px; background: var(--blue-mist) var(--cover, none) center / cover no-repeat; }
+.program-detail-cover { height: 300px; border-radius: 14px; background: var(--blue-mist) var(--cover, none) center / cover no-repeat; box-shadow: var(--shadow); }
+.program-body { padding: 24px 24px 26px; display: flex; flex-direction: column; flex: 1; }
+.program-body h3 { font-size: 1.35rem; margin: 0 0 4px; color: var(--text-primary); }
+.program-tagline { color: var(--text-secondary); margin: 0 0 16px; }
+.program-price { display: flex; align-items: baseline; gap: 4px; }
+.program-price .amount { font-size: 2rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-head); }
+.program-terms { color: var(--text-muted); font-size: 0.9rem; margin: 2px 0 18px; }
+
+/* Included-features list with drawn checkmarks. "…plus:" lines act as headers. */
+.feature-list { list-style: none; padding: 0; margin: 0 0 22px; display: flex; flex-direction: column; gap: 11px; }
+.feature-list li { position: relative; padding-left: 28px; color: var(--text-secondary); font-size: 0.96rem; line-height: 1.45; }
+.feature-list li::before {
+  content: ''; position: absolute; left: 6px; top: 3px;
+  width: 6px; height: 11px; border: solid var(--blue); border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+.feature-list li.feature-lead { padding-left: 0; font-weight: 700; color: var(--text-primary); margin-top: 4px; }
+.feature-list li.feature-lead::before { display: none; }
+
+.program-actions { margin-top: auto; }
+.program-actions .btn { width: 100%; text-align: center; }
+
+.program-detail { display: grid; grid-template-columns: 1.5fr 1fr; gap: 44px; align-items: start; }
+.program-buy { position: sticky; top: 110px; }
+.program-buy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; box-shadow: var(--shadow-soft); }
+.program-buy-card .program-price .amount { font-size: 2.3rem; }
+.feature-list.detail { margin-bottom: 0; }
+
 /* ---------- Footer ---------- */
 .site-footer { background: var(--blue-deep); color: var(--on-blue); padding: 52px 0 26px; }
 .site-footer a { color: #fff; }
@@ -495,6 +537,9 @@ input:focus, select:focus, textarea:focus {
   .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pillars { grid-template-columns: 1fr; gap: 22px; }
   .approach-cards { grid-template-columns: 1fr; max-width: 400px; gap: 22px; }
+  .program-grid { grid-template-columns: 1fr; max-width: 440px; margin: 0 auto; }
+  .program-detail { grid-template-columns: 1fr; gap: 30px; }
+  .program-buy { position: static; }
   .intro-grid { grid-template-columns: 1fr; gap: 40px; }
   .collage { max-width: 420px; }
   .feature-grid { grid-template-columns: 1fr; gap: 40px; }

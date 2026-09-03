@@ -7,6 +7,7 @@ import { BUSINESS } from '@/lib/site';
 
 const NAV = [
   { href: '/', label: 'Home' },
+  { href: '/programs', label: 'Programs' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
@@ -60,7 +61,11 @@ export default function SiteHeader() {
               key={n.href}
               href={n.href}
               onClick={close}
-              className={pathname === n.href ? 'active' : ''}
+              className={
+                (n.href === '/' ? pathname === '/' : pathname === n.href || pathname.startsWith(`${n.href}/`))
+                  ? 'active'
+                  : ''
+              }
             >
               {n.label}
             </Link>
