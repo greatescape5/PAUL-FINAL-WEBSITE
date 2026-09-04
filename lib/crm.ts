@@ -317,3 +317,35 @@ export async function archiveStage(id: string) {
   const { error } = await supabase.from('stages').update({ archived_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
+
+// ---- Pricing tiers (editable name + price; see migration 0003) ----
+export interface Tier {
+  id: string
+  name: string
+  price: number
+  sort_order: number
+}
+
+export async function getTiers() {
+  const { data, error } = await supabase
+    .from('tiers').select('id,name,price,sort_order')
+    .is('archived_at', null)
+    .order('sort_order')
+  if (error) throw error
+  return data as Tier[]
+}
+
+export async function createTier(name: string, price: number, sortOrder: number) {
+  const { error } = await supabase.from('tiers').insert({ name, price, sort_order: sortOrder })
+  if (error) throw error
+}
+
+export async function updateTier(id: string, patch: Partial<Pick<Tier, 'name' | 'price' | 'sort_order'>>) {
+  const { error } = await supabase.from('tiers').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function archiveTier(id: string) {
+  const { error } = await supabase.from('tiers').update({ archived_at: new Date().toISOString() }).eq('id', id)
+  if (error) throw error
+}
