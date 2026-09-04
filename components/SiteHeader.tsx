@@ -19,6 +19,9 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const close = () => setOpen(false);
 
+  // The CRM (/admin) has its own shell — no marketing chrome.
+  if (pathname?.startsWith('/admin')) return null;
+
   // If public/logo.png finishes loading before hydration attaches onLoad, the
   // event is missed — so check the image's state once on mount too.
   useEffect(() => {

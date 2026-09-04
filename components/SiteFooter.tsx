@@ -1,7 +1,14 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { BUSINESS } from '@/lib/site';
 
 export default function SiteFooter() {
+  const pathname = usePathname();
+  // The CRM (/admin) has its own shell — no marketing chrome.
+  if (pathname?.startsWith('/admin')) return null;
+
   const year = new Date().getFullYear();
   return (
     <footer className="site-footer">
