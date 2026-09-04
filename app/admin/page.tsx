@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/crm';
 
-type Status = 'idle' | 'sending' | 'sent' | 'error';
+type Status = 'idle' | 'signing' | 'error';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [msg, setMsg] = useState('');
 
@@ -22,23 +23,20 @@ export default function AdminLoginPage() {
     });
   }, [router]);
 
-  async function sendLink(e: React.FormEvent) {
+  async function signIn(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
-    setStatus('sending');
+    if (!email.trim() || !password) return;
+    setStatus('signing');
     setMsg('');
-    const redirectTo =
-      typeof window !== 'undefined' ? `${window.location.origin}/admin/today` : undefined;
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
-      options: { emailRedirectTo: redirectTo, shouldCreateUser: false },
+      password,
     });
     if (error) {
       setStatus('error');
       setMsg(error.message);
     } else {
-      setStatus('sent');
-      setMsg('Check your email for a sign-in link.');
+      router.replace('/admin/today');
     }
   }
 
@@ -49,22 +47,30 @@ export default function AdminLoginPage() {
   return (
     <div className="crm-login">
       <div className="crm-login-card">
-        <h1>Flow Motion CRM</h1>
-        <p>Sign in with your email — we&rsquo;ll send you a one-tap link.</p>
-        <form onSubmit={sendLink}>
+        <img src="/logo.png" alt="Flow Motion Personal Training" className="crm-login-logo" />
+        <p>Sign in to the CRM.</p>
+        <form onSubmit={signIn}>
           <input
             type="email"
-            placeholder="you@example.com"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
+            autoComplete="username"
             required
           />
-          <button type="submit" disabled={status === 'sending' || status === 'sent'}>
-            {status === 'sending' ? 'Sending…' : status === 'sent' ? 'Link sent' : 'Send sign-in link'}
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+          <button type="submit" disabled={status === 'signing'}>
+            {status === 'signing' ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-        {msg && <p className={`crm-login-msg ${status === 'error' ? 'err' : 'ok'}`}>{msg}</p>}
+        {msg && <p className="crm-login-msg err">{msg}</p>}
         <p style={{ marginTop: 22, fontSize: '0.85rem' }}>
           <Link href="/" className="crm-back">← Back to site</Link>
         </p>

@@ -19,15 +19,16 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const close = () => setOpen(false);
 
-  // The CRM (/admin) has its own shell — no marketing chrome.
-  if (pathname?.startsWith('/admin')) return null;
-
   // If public/logo.png finishes loading before hydration attaches onLoad, the
   // event is missed — so check the image's state once on mount too.
   useEffect(() => {
     const img = logoRef.current;
     if (img && img.complete && img.naturalWidth > 0) setLogoLoaded(true);
   }, []);
+
+  // The CRM (/admin) has its own shell — no marketing chrome.
+  // (Placed after all hooks so the hook order stays consistent across routes.)
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <header className="site-header">
