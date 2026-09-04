@@ -14,16 +14,26 @@ export default function ContactForm() {
     setStatus('sending');
 
     const form = e.currentTarget;
+
+    // Capture attribution (utm_* params + referrer + landing page).
+    const params = new URLSearchParams(window.location.search);
+    const utm: Record<string, string> = {};
+    params.forEach((v, k) => { if (k.startsWith('utm_')) utm[k] = v; });
+
     const data = {
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
       phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
       contact_method: (form.elements.namedItem('contact_method') as HTMLSelectElement).value,
       message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+      company: (form.elements.namedItem('company') as HTMLInputElement)?.value ?? '', // honeypot
+      utm,
+      referrer: document.referrer || null,
+      landing_page: window.location.pathname,
     };
 
     try {
-      const res = await fetch('/api/lead', {
+      const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -53,6 +63,12 @@ export default function ContactForm() {
           directly.
         </div>
       )}
+
+      {/* Honeypot — hidden from people; bots fill it and get silently dropped */}
+      <input
+        type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true"
+        style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+      />
 
       <div className="field">
         <label htmlFor="name">Name</label>
