@@ -161,6 +161,7 @@ export default function PnlPage() {
 // Two-series inline SVG chart (no external library)
 // ---------------------------------------------------------------------------
 function PnlChart({ data }: { data: { label: string; revenue: number; expense: number }[] }) {
+  const [hover, setHover] = useState<{ i: number; key: 'revenue' | 'expense' } | null>(null);
   const W = 720, H = 250, padL = 52, padR = 16, padT = 16, padB = 30;
   const innerW = W - padL - padR, innerH = H - padT - padB;
   const n = data.length;
@@ -170,9 +171,25 @@ function PnlChart({ data }: { data: { label: string; revenue: number; expense: n
   const y = (v: number) => padT + innerH * (1 - v / niceMax);
   const pts = (key: 'revenue' | 'expense') => data.map((d, i) => `${x(i)},${y(d[key])}`).join(' ');
   const gridVals = [0, niceMax / 2, niceMax];
+  const color = (key: 'revenue' | 'expense') => (key === 'revenue' ? REVENUE_COLOR : EXPENSE_COLOR);
+
+  // Tooltip geometry for the hovered point.
+  let tip: null | { rx: number; ty: number; rectY: number; w: number; label: string; sub: string; c: string } = null;
+  if (hover) {
+    const d = data[hover.i];
+    const v = d[hover.key];
+    const cx = x(hover.i), cy = y(v);
+    const label = money(v);
+    const sub = `${d.label} · ${hover.key === 'revenue' ? 'Revenue' : 'Expenses'}`;
+    const w = Math.max(96, sub.length * 6.2 + 20);
+    const rx = Math.max(padL + w / 2, Math.min(W - padR - w / 2, cx));
+    const above = cy - 44 > padT;
+    tip = { rx, ty: cy, rectY: above ? cy - 46 : cy + 12, w, label, sub, c: color(hover.key) };
+  }
 
   return (
-    <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Revenue vs expenses by month">
+    <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Revenue vs expenses by month"
+      onMouseLeave={() => setHover(null)}>
       {gridVals.map((v, i) => (
         <g key={i}>
           <line x1={padL} y1={y(v)} x2={W - padR} y2={y(v)} stroke="var(--crm-border)" strokeWidth="1" />
@@ -183,11 +200,21 @@ function PnlChart({ data }: { data: { label: string; revenue: number; expense: n
       <polyline points={pts('expense')} fill="none" stroke={EXPENSE_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {data.map((d, i) => (
         <g key={i}>
-          <circle cx={x(i)} cy={y(d.revenue)} r="3" fill={REVENUE_COLOR} />
-          <circle cx={x(i)} cy={y(d.expense)} r="3" fill={EXPENSE_COLOR} />
+          <circle cx={x(i)} cy={y(d.revenue)} r={hover?.i === i && hover.key === 'revenue' ? 5.5 : 3} fill={REVENUE_COLOR} />
+          <circle cx={x(i)} cy={y(d.expense)} r={hover?.i === i && hover.key === 'expense' ? 5.5 : 3} fill={EXPENSE_COLOR} />
           <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" fill="var(--crm-ink-mute)">{d.label}</text>
+          {/* generous invisible hover targets */}
+          <circle cx={x(i)} cy={y(d.revenue)} r={13} fill="transparent" style={{ cursor: 'pointer' }} onMouseEnter={() => setHover({ i, key: 'revenue' })} />
+          <circle cx={x(i)} cy={y(d.expense)} r={13} fill="transparent" style={{ cursor: 'pointer' }} onMouseEnter={() => setHover({ i, key: 'expense' })} />
         </g>
       ))}
+      {tip && (
+        <g pointerEvents="none">
+          <rect x={tip.rx - tip.w / 2} y={tip.rectY} width={tip.w} height={34} rx={6} fill="#1f2a37" />
+          <text x={tip.rx} y={tip.rectY + 15} textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">{tip.label}</text>
+          <text x={tip.rx} y={tip.rectY + 28} textAnchor="middle" fontSize="10" fill={tip.c}>{tip.sub}</text>
+        </g>
+      )}
     </svg>
   );
 }
