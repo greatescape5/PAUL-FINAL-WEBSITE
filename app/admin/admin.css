@@ -172,6 +172,21 @@
 .sheet-actions .go { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 11px 22px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .sheet-actions .go:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ---------- Stats + chart (Expenses) ---------- */
+.crm-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
+.crm-stat { background: var(--crm-surface); border: 1px solid var(--crm-border); border-radius: 12px; padding: 18px 20px; }
+.crm-stat .val { font-size: 1.7rem; font-weight: 700; font-family: var(--font-head); color: var(--crm-ink); line-height: 1; }
+.crm-stat .lbl { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--crm-ink-soft); margin-top: 7px; }
+.crm-stat.accent .val { color: var(--red); }
+
+.chart-card { padding: 20px 22px 14px; margin-bottom: 22px; }
+.chart-title { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--crm-ink-soft); margin-bottom: 14px; }
+.chart-svg { width: 100%; height: auto; display: block; }
+
+.rec-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 9px; border-radius: 999px; }
+.rec-badge.monthly { background: #e2eefa; color: #2f6aa8; }
+.rec-badge.one_time { background: #eceef1; color: #6b7681; }
+
 /* ---------- Login ---------- */
 .crm-login { min-height: 100vh; display: grid; place-items: center; background: var(--blue-deep); padding: 24px; }
 .crm-login-card { background: #fff; border-radius: 16px; padding: 40px 34px; width: 100%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); text-align: center; }
@@ -201,4 +216,5 @@
   .crm-content { padding: 20px 16px 50px; }
   .crm-topbar { padding: 16px; }
   .sheet .opt-grid { grid-template-columns: 1fr; }
+  .crm-stats { grid-template-columns: 1fr; }
 }

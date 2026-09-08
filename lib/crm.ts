@@ -349,3 +349,42 @@ export async function archiveTier(id: string) {
   const { error } = await supabase.from('tiers').update({ archived_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
+
+// ---- Expenses (see migration 0004) ----
+export type Recurrence = 'one_time' | 'monthly'
+
+export interface Expense {
+  id: string
+  name: string
+  amount: number
+  incurred_on: string
+  recurrence: Recurrence
+}
+
+export async function getExpenses() {
+  const { data, error } = await supabase
+    .from('expenses').select('id,name,amount,incurred_on,recurrence')
+    .is('archived_at', null)
+    .order('incurred_on', { ascending: false })
+  if (error) throw error
+  return data as Expense[]
+}
+
+export async function createExpense(input: {
+  name: string; amount: number; incurred_on: string; recurrence: Recurrence
+}) {
+  const { error } = await supabase.from('expenses').insert(input)
+  if (error) throw error
+}
+
+export async function updateExpense(id: string, patch: Partial<{
+  name: string; amount: number; incurred_on: string; recurrence: Recurrence
+}>) {
+  const { error } = await supabase.from('expenses').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function archiveExpense(id: string) {
+  const { error } = await supabase.from('expenses').update({ archived_at: new Date().toISOString() }).eq('id', id)
+  if (error) throw error
+}
