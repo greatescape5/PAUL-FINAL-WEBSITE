@@ -76,6 +76,34 @@ export default function PnlPage() {
     return months;
   }, [expenses, billing]);
 
+  // Last 4 calendar quarters: revenue, expenses, profit.
+  const quarters = useMemo(() => {
+    const now = new Date();
+    const monthly = expenses.filter((e) => e.recurrence === 'monthly');
+    const oneTime = expenses.filter((e) => e.recurrence === 'one_time');
+    const curQStartAbs = now.getFullYear() * 12 + Math.floor(now.getMonth() / 3) * 3;
+    const out: { label: string; revenue: number; expense: number; profit: number }[] = [];
+    for (let i = 3; i >= 0; i--) {
+      const startAbs = curQStartAbs - i * 3;
+      const sy = Math.floor(startAbs / 12), sm = startAbs % 12;
+      let revenue = 0, expense = 0;
+      for (let mo = 0; mo < 3; mo++) {
+        const first = new Date(sy, sm + mo, 1);
+        const last = new Date(sy, sm + mo + 1, 0, 23, 59, 59);
+        revenue += billing.reduce((s, c) => {
+          const st = c.started_on ? parseDate(c.started_on) : null;
+          const en = c.cancelled_on ? parseDate(c.cancelled_on) : null;
+          return (!st || st <= last) && (!en || en >= first) ? s + Number(c.monthly_rate) : s;
+        }, 0);
+        const rec = monthly.filter((e) => parseDate(e.incurred_on) <= last).reduce((s, e) => s + Number(e.amount), 0);
+        const ot = oneTime.filter((e) => { const d = parseDate(e.incurred_on); return d >= first && d <= last; }).reduce((s, e) => s + Number(e.amount), 0);
+        expense += rec + ot;
+      }
+      out.push({ label: `Q${Math.floor(sm / 3) + 1} ${sy}`, revenue, expense, profit: revenue - expense });
+    }
+    return out;
+  }, [expenses, billing]);
+
   async function del(e: Expense) {
     if (!confirm(`Remove "${e.name}"?`)) return;
     await archiveExpense(e.id);
@@ -118,7 +146,26 @@ export default function PnlPage() {
             <PnlChart data={chart} />
           </div>
 
-          <div className="crm-group-title">
+          <div className="crm-group-title">Quarterly summary</div>
+          <div className="crm-card" style={{ padding: '4px 12px' }}>
+            <table className="crm-table">
+              <thead>
+                <tr><th>Quarter</th><th>Revenue</th><th>Expenses</th><th>Profit</th></tr>
+              </thead>
+              <tbody>
+                {quarters.map((q) => (
+                  <tr key={q.label}>
+                    <td>{q.label}</td>
+                    <td style={{ color: REVENUE_COLOR }}>{money(q.revenue)}</td>
+                    <td style={{ color: EXPENSE_COLOR }}>{money(q.expense)}</td>
+                    <td style={{ color: q.profit >= 0 ? REVENUE_COLOR : EXPENSE_COLOR, fontWeight: 700 }}>{money(q.profit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="crm-group-title" style={{ marginTop: 34 }}>
             Expenses <span className="count">{expenses.length}</span>
           </div>
           <p className="form-note" style={{ margin: '-6px 0 12px', color: 'var(--crm-ink-soft)' }}>

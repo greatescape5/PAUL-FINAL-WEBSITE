@@ -183,6 +183,13 @@
 .chart-title { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--crm-ink-soft); margin-bottom: 14px; }
 .chart-svg { width: 100%; height: auto; display: block; }
 
+.crm-table { width: 100%; border-collapse: collapse; }
+.crm-table th, .crm-table td { text-align: right; padding: 12px 14px; border-bottom: 1px solid var(--crm-border); font-size: 0.95rem; color: var(--crm-ink); }
+.crm-table th:first-child, .crm-table td:first-child { text-align: left; font-weight: 600; }
+.crm-table th { color: var(--crm-ink-soft); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.crm-table tbody tr:last-child td { border-bottom: none; }
+.crm-table tbody tr:hover { background: #f7f9fb; }
+
 .rec-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 9px; border-radius: 999px; }
 .rec-badge.monthly { background: #e2eefa; color: #2f6aa8; }
 .rec-badge.one_time { background: #eceef1; color: #6b7681; }
