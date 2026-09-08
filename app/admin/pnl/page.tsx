@@ -4,80 +4,86 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import CrmShell from '@/components/crm/CrmShell';
 import {
   getExpenses, createExpense, updateExpense, archiveExpense,
-  type Expense, type Recurrence,
+  getBillingContacts, getMrr,
+  type Expense, type Recurrence, type BillingContact,
 } from '@/lib/crm';
 
 const money = (n: number, cents = false) =>
-  `$${n.toLocaleString('en-US', { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 })}`;
+  `${n < 0 ? '-' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 })}`;
 
-// Parse 'YYYY-MM-DD' as a local date (avoids UTC off-by-one).
 function parseDate(s: string) {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, (m || 1) - 1, d || 1);
 }
 const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (s: string) => parseDate(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-function fmtDate(s: string) {
-  return parseDate(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
+const REVENUE_COLOR = '#10b981';
+const EXPENSE_COLOR = '#b51f21';
 
-export default function ExpensesPage() {
+export default function PnlPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [billing, setBilling] = useState<BillingContact[]>([]);
+  const [mrr, setMrr] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sheet, setSheet] = useState<null | Expense | 'new'>(null);
 
   const load = useCallback(async () => {
-    try { setExpenses(await getExpenses()); }
-    catch { setExpenses([]); }
-    finally { setLoading(false); }
+    try {
+      const [exp, bill, mrrRow] = await Promise.all([
+        getExpenses().catch(() => []),
+        getBillingContacts().catch(() => []),
+        getMrr().catch(() => ({ mrr: 0 } as any)),
+      ]);
+      setExpenses(exp);
+      setBilling(bill);
+      setMrr(Number(mrrRow?.mrr ?? 0));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  // ---- Totals ----
-  const { monthlyRecurring, oneTimeTotal, thisMonth } = useMemo(() => {
-    const now = new Date();
-    let mr = 0, ot = 0, otThisMonth = 0;
-    for (const e of expenses) {
-      const amt = Number(e.amount);
-      if (e.recurrence === 'monthly') { mr += amt; }
-      else {
-        ot += amt;
-        const d = parseDate(e.incurred_on);
-        if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) otThisMonth += amt;
-      }
-    }
-    return { monthlyRecurring: mr, oneTimeTotal: ot, thisMonth: mr + otThisMonth };
-  }, [expenses]);
+  const monthlyExpenses = useMemo(
+    () => expenses.filter((e) => e.recurrence === 'monthly').reduce((s, e) => s + Number(e.amount), 0),
+    [expenses],
+  );
+  const net = mrr - monthlyExpenses;
 
-  // ---- Monthly chart data (rolling 12 months) ----
+  // Rolling 12-month revenue vs expenses.
   const chart = useMemo(() => {
     const now = new Date();
     const monthly = expenses.filter((e) => e.recurrence === 'monthly');
     const oneTime = expenses.filter((e) => e.recurrence === 'one_time');
-    const months: { label: string; total: number }[] = [];
+    const months: { label: string; revenue: number; expense: number }[] = [];
     for (let i = 11; i >= 0; i--) {
       const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const last = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-      const rec = monthly
-        .filter((e) => parseDate(e.incurred_on) <= last)
-        .reduce((s, e) => s + Number(e.amount), 0);
-      const ot = oneTime
-        .filter((e) => { const d = parseDate(e.incurred_on); return d >= first && d <= last; })
-        .reduce((s, e) => s + Number(e.amount), 0);
-      months.push({ label: first.toLocaleDateString('en-US', { month: 'short' }), total: rec + ot });
+      // Revenue: subscriptions whose active window overlaps this month.
+      const revenue = billing.reduce((s, c) => {
+        const start = c.started_on ? parseDate(c.started_on) : null;
+        const end = c.cancelled_on ? parseDate(c.cancelled_on) : null;
+        const startedByNow = !start || start <= last;
+        const notCancelledYet = !end || end >= first;
+        return startedByNow && notCancelledYet ? s + Number(c.monthly_rate) : s;
+      }, 0);
+      // Expenses: recurring carried across + one-time in this month.
+      const rec = monthly.filter((e) => parseDate(e.incurred_on) <= last).reduce((s, e) => s + Number(e.amount), 0);
+      const ot = oneTime.filter((e) => { const d = parseDate(e.incurred_on); return d >= first && d <= last; }).reduce((s, e) => s + Number(e.amount), 0);
+      months.push({ label: first.toLocaleDateString('en-US', { month: 'short' }), revenue, expense: rec + ot });
     }
     return months;
-  }, [expenses]);
+  }, [expenses, billing]);
 
   async function del(e: Expense) {
-    if (!confirm(`Remove "${e.name}"? You can't undo this from here.`)) return;
+    if (!confirm(`Remove "${e.name}"?`)) return;
     await archiveExpense(e.id);
     load();
   }
 
   return (
-    <CrmShell title="Expenses">
+    <CrmShell title="Profit & Loss">
       {loading ? (
         <div className="crm-loading">Loading…</div>
       ) : (
@@ -87,29 +93,39 @@ export default function ExpensesPage() {
           </div>
 
           <div className="crm-stats">
-            <div className="crm-stat accent">
-              <div className="val">{money(monthlyRecurring)}</div>
-              <div className="lbl">Monthly recurring</div>
+            <div className="crm-stat">
+              <div className="val" style={{ color: REVENUE_COLOR }}>{money(mrr)}</div>
+              <div className="lbl">Monthly revenue (MRR)</div>
             </div>
             <div className="crm-stat">
-              <div className="val">{money(thisMonth)}</div>
-              <div className="lbl">This month (recurring + one-time)</div>
+              <div className="val" style={{ color: EXPENSE_COLOR }}>{money(monthlyExpenses)}</div>
+              <div className="lbl">Monthly expenses</div>
             </div>
             <div className="crm-stat">
-              <div className="val">{money(oneTimeTotal)}</div>
-              <div className="lbl">One-time total (all time)</div>
+              <div className="val" style={{ color: net >= 0 ? REVENUE_COLOR : EXPENSE_COLOR }}>{money(net)}</div>
+              <div className="lbl">Net profit / month</div>
             </div>
           </div>
 
           <div className="crm-card chart-card">
-            <div className="chart-title">Total expenses by month</div>
-            <LineChart data={chart} />
+            <div className="chart-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Revenue vs expenses by month</span>
+              <span style={{ display: 'inline-flex', gap: 16, textTransform: 'none', letterSpacing: 0 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: REVENUE_COLOR }} />Revenue</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: EXPENSE_COLOR }} />Expenses</span>
+              </span>
+            </div>
+            <PnlChart data={chart} />
           </div>
 
+          <div className="crm-group-title">
+            Expenses <span className="count">{expenses.length}</span>
+          </div>
+          <p className="form-note" style={{ margin: '-6px 0 12px', color: 'var(--crm-ink-soft)' }}>
+            Revenue is calculated automatically from your active client subscriptions. Add costs below.
+          </p>
           {expenses.length === 0 ? (
-            <div className="crm-empty" style={{ padding: '40px 24px' }}>
-              <p>No expenses yet — add your first with the button above.</p>
-            </div>
+            <div className="crm-empty" style={{ padding: '36px 24px' }}><p>No expenses yet — add your first above.</p></div>
           ) : (
             <div className="crm-card">
               {expenses.map((e) => (
@@ -142,40 +158,33 @@ export default function ExpensesPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Inline SVG line chart (no external library)
+// Two-series inline SVG chart (no external library)
 // ---------------------------------------------------------------------------
-function LineChart({ data }: { data: { label: string; total: number }[] }) {
-  const W = 720, H = 240, padL = 52, padR = 16, padT = 16, padB = 30;
+function PnlChart({ data }: { data: { label: string; revenue: number; expense: number }[] }) {
+  const W = 720, H = 250, padL = 52, padR = 16, padT = 16, padB = 30;
   const innerW = W - padL - padR, innerH = H - padT - padB;
   const n = data.length;
-  const rawMax = Math.max(...data.map((d) => d.total), 0);
-  // Round the axis max up to a "nice" number.
-  const niceMax = rawMax <= 0 ? 100 : Math.ceil(rawMax / 100) * 100;
+  const rawMax = Math.max(...data.flatMap((d) => [d.revenue, d.expense]), 0);
+  const niceMax = rawMax <= 0 ? 100 : Math.ceil(rawMax / 500) * 500;
   const x = (i: number) => padL + (n <= 1 ? innerW / 2 : (i * innerW) / (n - 1));
   const y = (v: number) => padT + innerH * (1 - v / niceMax);
-
-  const linePts = data.map((d, i) => `${x(i)},${y(d.total)}`).join(' ');
-  const areaPts = `${padL},${padT + innerH} ${linePts} ${x(n - 1)},${padT + innerH}`;
+  const pts = (key: 'revenue' | 'expense') => data.map((d, i) => `${x(i)},${y(d[key])}`).join(' ');
   const gridVals = [0, niceMax / 2, niceMax];
 
   return (
-    <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Total expenses by month">
-      {/* gridlines + y labels */}
+    <svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Revenue vs expenses by month">
       {gridVals.map((v, i) => (
         <g key={i}>
           <line x1={padL} y1={y(v)} x2={W - padR} y2={y(v)} stroke="var(--crm-border)" strokeWidth="1" />
-          <text x={padL - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--crm-ink-mute)">
-            {money(v)}
-          </text>
+          <text x={padL - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--crm-ink-mute)">{money(v)}</text>
         </g>
       ))}
-      {/* area + line */}
-      <polygon points={areaPts} fill="var(--blue)" opacity="0.12" />
-      <polyline points={linePts} fill="none" stroke="var(--blue)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {/* dots + x labels */}
+      <polyline points={pts('revenue')} fill="none" stroke={REVENUE_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={pts('expense')} fill="none" stroke={EXPENSE_COLOR} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {data.map((d, i) => (
         <g key={i}>
-          <circle cx={x(i)} cy={y(d.total)} r="3.5" fill="var(--blue)" />
+          <circle cx={x(i)} cy={y(d.revenue)} r="3" fill={REVENUE_COLOR} />
+          <circle cx={x(i)} cy={y(d.expense)} r="3" fill={EXPENSE_COLOR} />
           <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" fill="var(--crm-ink-mute)">{d.label}</text>
         </g>
       ))}
@@ -184,7 +193,7 @@ function LineChart({ data }: { data: { label: string; total: number }[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Add / edit sheet
+// Add / edit expense sheet
 // ---------------------------------------------------------------------------
 function ExpenseSheet({
   expense, onClose, onSaved,

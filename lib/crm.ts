@@ -388,3 +388,24 @@ export async function archiveExpense(id: string) {
   const { error } = await supabase.from('expenses').update({ archived_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
+
+// Billing history for the P&L revenue reconstruction. Each priced contact is a
+// subscription active from started_on until cancelled_on (or ongoing). Current
+// MRR still comes from v_mrr (which excludes paused); this drives the trend.
+export interface BillingContact {
+  id: string
+  monthly_rate: number
+  started_on: string | null
+  cancelled_on: string | null
+  lifecycle: Lifecycle
+}
+
+export async function getBillingContacts() {
+  const { data, error } = await supabase
+    .from('v_contacts')
+    .select('id,monthly_rate,started_on,cancelled_on,lifecycle')
+    .not('monthly_rate', 'is', null)
+    .gt('monthly_rate', 0)
+  if (error) throw error
+  return data as BillingContact[]
+}

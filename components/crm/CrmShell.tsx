@@ -8,7 +8,7 @@ import { supabase, getMrr } from '@/lib/crm';
 const NAV = [
   { href: '/admin/today', label: 'Today' },
   { href: '/admin/people', label: 'People' },
-  { href: '/admin/expenses', label: 'Expenses' },
+  { href: '/admin/pnl', label: 'Profit & Loss' },
   { href: '/admin/settings', label: 'Settings' },
 ];
 
