@@ -450,15 +450,19 @@ export async function getFollowUps(contactId: string) {
   return data as FollowUp[]
 }
 
-/** Marks the pending follow-up done: logs it, then clears contacts.follow_up_on
- *  so it drops off Today. Works from Today (pass the due date) or the contact. */
-export async function completeFollowUp(contactId: string, dueOn: string | null, note?: string) {
+/** Marks the pending follow-up done: logs it, then sets contacts.follow_up_on
+ *  to the next date (or clears it). Works from Today or the contact page. */
+export async function completeFollowUp(
+  contactId: string,
+  dueOn: string | null,
+  opts: { note?: string; nextDate?: string | null } = {},
+) {
   const { error: e1 } = await supabase
     .from('follow_ups')
-    .insert({ contact_id: contactId, due_on: dueOn, note: note || null })
+    .insert({ contact_id: contactId, due_on: dueOn, note: opts.note || null })
   if (e1) throw e1
   const { error: e2 } = await supabase
-    .from('contacts').update({ follow_up_on: null }).eq('id', contactId)
+    .from('contacts').update({ follow_up_on: opts.nextDate ?? null }).eq('id', contactId)
   if (e2) throw e2
 }
 

@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
+import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
   setFollowUp, clearReview,
   getCheckIns, addCheckIn, deleteCheckIn,
-  getFollowUps, completeFollowUp,
+  getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
   type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp,
 } from '@/lib/crm';
@@ -62,6 +63,7 @@ export default function ContactDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [addingCheckIn, setAddingCheckIn] = useState(false);
+  const [completingFu, setCompletingFu] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -106,12 +108,6 @@ export default function ContactDetailPage() {
     catch (e: any) { alert(e?.message ?? 'Could not delete'); }
   }
 
-  async function markFollowUpDone() {
-    setBusy(true);
-    try { await completeFollowUp(id, contact?.follow_up_on ?? null); await load(); }
-    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
-    finally { setBusy(false); }
-  }
 
   if (loading) return <CrmShell title="Contact"><div className="crm-loading">Loading…</div></CrmShell>;
   if (notFound || !contact) return <CrmShell title="Contact"><div className="crm-loading">Contact not found. <Link href="/admin/people">Back to People</Link></div></CrmShell>;
@@ -167,7 +163,7 @@ export default function ContactDetailPage() {
             <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.92rem' }}>
               Follow-up on <strong>{fmtDay(c.follow_up_on)}</strong>
             </span>
-            <button className="action-btn primary" style={{ padding: '6px 14px' }} disabled={busy} onClick={markFollowUpDone}>
+            <button className="action-btn primary" style={{ padding: '6px 14px' }} onClick={() => setCompletingFu(true)}>
               Mark done
             </button>
           </div>
@@ -279,6 +275,16 @@ export default function ContactDetailPage() {
           contactId={id}
           onClose={() => setAddingCheckIn(false)}
           onSaved={() => { setAddingCheckIn(false); load(); }}
+        />
+      )}
+
+      {completingFu && (
+        <CompleteFollowUpSheet
+          contactId={id}
+          contactName={c.full_name}
+          dueOn={c.follow_up_on}
+          onClose={() => setCompletingFu(false)}
+          onDone={() => { setCompletingFu(false); load(); }}
         />
       )}
     </CrmShell>

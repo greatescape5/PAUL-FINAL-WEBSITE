@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
-import { getToday, applyRateChange, completeFollowUp, type TodayItem } from '@/lib/crm';
+import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
+import { getToday, applyRateChange, type TodayItem } from '@/lib/crm';
 
 function daysLabel(n: number) {
   if (n <= 0) return 'today';
@@ -16,7 +17,7 @@ export default function TodayPage() {
   const [items, setItems] = useState<TodayItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null);
-  const [completing, setCompleting] = useState<string | null>(null);
+  const [completingItem, setCompletingItem] = useState<TodayItem | null>(null);
 
   const load = useCallback(async () => {
     try { setItems(await getToday()); }
@@ -33,12 +34,6 @@ export default function TodayPage() {
     finally { setApplying(null); }
   }
 
-  async function completeFu(item: TodayItem) {
-    setCompleting(item.item_id);
-    try { await completeFollowUp(item.contact_id, item.due_on); await load(); }
-    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
-    finally { setCompleting(null); }
-  }
 
   const rateChanges = items.filter((i) => i.item_type === 'rate_change');
   const followUps = items.filter((i) => i.item_type === 'follow_up');
@@ -101,10 +96,9 @@ export default function TodayPage() {
                     <div className="right overdue">{daysLabel(i.days_overdue)}</div>
                     <button
                       className="action-btn primary"
-                      onClick={(e) => { e.stopPropagation(); completeFu(i); }}
-                      disabled={completing === i.item_id}
+                      onClick={(e) => { e.stopPropagation(); setCompletingItem(i); }}
                     >
-                      {completing === i.item_id ? 'Saving…' : 'Mark done'}
+                      Mark done
                     </button>
                   </div>
                 ))}
@@ -131,6 +125,16 @@ export default function TodayPage() {
             </>
           )}
         </>
+      )}
+
+      {completingItem && (
+        <CompleteFollowUpSheet
+          contactId={completingItem.contact_id}
+          contactName={completingItem.full_name}
+          dueOn={completingItem.due_on}
+          onClose={() => setCompletingItem(null)}
+          onDone={() => { setCompletingItem(null); load(); }}
+        />
       )}
     </CrmShell>
   );
