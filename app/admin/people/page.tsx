@@ -35,7 +35,7 @@ export default function PeoplePage() {
   const [stages, setStages] = useState<Stage[]>([]);
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [creating, setCreating] = useState(false);
-  const [sort, setSort] = useState<'name' | 'tier'>('name');
+  const [sort, setSort] = useState<'name' | 'tier'>('tier');
 
   const load = useCallback(async (lc: Lifecycle) => {
     setLoading(true);
