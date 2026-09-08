@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
 import {
-  getContacts, createContact, getStages,
+  getContacts, createContact, getStages, getTiers,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
-  type Contact, type Lifecycle, type Stage,
+  type Contact, type Lifecycle, type Stage, type Tier,
 } from '@/lib/crm';
 
 const SEGMENTS: { key: Lifecycle; label: string }[] = [
@@ -18,6 +18,13 @@ const SEGMENTS: { key: Lifecycle; label: string }[] = [
 
 const money = (n: number | null) => (n == null ? '—' : `$${Math.round(n).toLocaleString()}`);
 
+// Is this tier name essentially just the price (e.g. seeded "$299")? If so we
+// treat it as having no real package name and just show the price.
+function priceLike(name: string, rate: number) {
+  const n = name.trim().replace(/\/mo$/i, '').replace(/[$,\s]/g, '');
+  return n === String(rate) || Number(n) === rate;
+}
+
 export default function PeoplePage() {
   const router = useRouter();
   const [seg, setSeg] = useState<Lifecycle>('client');
@@ -26,6 +33,7 @@ export default function PeoplePage() {
   const [q, setQ] = useState('');
   const [groupByStage, setGroupByStage] = useState(true);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [creating, setCreating] = useState(false);
   const [sort, setSort] = useState<'name' | 'tier'>('name');
 
@@ -38,6 +46,7 @@ export default function PeoplePage() {
 
   useEffect(() => { load(seg); }, [seg, load]);
   useEffect(() => { getStages().then(setStages).catch(() => {}); }, []);
+  useEffect(() => { getTiers().then(setTiers).catch(() => {}); }, []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -77,6 +86,20 @@ export default function PeoplePage() {
     }
     return [...map.entries()];
   }, [sorted, seg, groupByStage]);
+
+  // When sorting by tier, break the list into price-point groups (each with a
+  // heading: the tier's package name + the price in gray).
+  const tierGroups = useMemo(() => {
+    if (sort !== 'tier') return null;
+    const groups: { rate: number | null; items: Contact[] }[] = [];
+    for (const c of sorted) {
+      const r = c.monthly_rate == null ? null : Number(c.monthly_rate);
+      const last = groups[groups.length - 1];
+      if (last && last.rate === r) last.items.push(c);
+      else groups.push({ rate: r, items: [c] });
+    }
+    return groups;
+  }, [sorted, sort]);
 
   const go = (id: string) => router.push(`/admin/people/${id}`);
 
@@ -143,6 +166,22 @@ export default function PeoplePage() {
             <div className="crm-card">{list.map((c) => <Row key={c.id} c={c} />)}</div>
           </div>
         ))
+      ) : tierGroups ? (
+        tierGroups.map((g, i) => {
+          const t = g.rate == null ? undefined : tiers.find((x) => Number(x.price) === g.rate);
+          const realName = t && g.rate != null && !priceLike(t.name, g.rate) ? t.name : null;
+          const priceLabel = g.rate == null ? 'No rate set' : `${money(g.rate)}/mo`;
+          return (
+            <div key={i}>
+              <div className="crm-group-title" style={{ textTransform: 'none', letterSpacing: 0, alignItems: 'baseline' }}>
+                {realName && <span style={{ color: 'var(--crm-ink)', fontSize: '1rem' }}>{realName}</span>}
+                <span style={{ color: 'var(--crm-ink-mute)', fontWeight: 500 }}>{priceLabel}</span>
+                <span className="count">{g.items.length}</span>
+              </div>
+              <div className="crm-card">{g.items.map((c) => <Row key={c.id} c={c} />)}</div>
+            </div>
+          );
+        })
       ) : (
         <div className="crm-card">{sorted.map((c) => <Row key={c.id} c={c} />)}</div>
       )}
