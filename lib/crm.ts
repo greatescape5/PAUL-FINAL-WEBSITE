@@ -400,6 +400,37 @@ export interface BillingContact {
   lifecycle: Lifecycle
 }
 
+// ---- Accountability check-ins (see migration 0005) ----
+export interface CheckIn {
+  id: string
+  contact_id: string
+  kind: string
+  done_on: string
+  note: string | null
+  created_at: string
+}
+
+export async function getCheckIns(contactId: string) {
+  const { data, error } = await supabase
+    .from('check_ins').select('*')
+    .eq('contact_id', contactId)
+    .order('done_on', { ascending: false })
+  if (error) throw error
+  return data as CheckIn[]
+}
+
+export async function addCheckIn(contactId: string, kind: string, doneOn: string, note?: string) {
+  const { error } = await supabase.from('check_ins').insert({
+    contact_id: contactId, kind, done_on: doneOn, note: note || null,
+  })
+  if (error) throw error
+}
+
+export async function deleteCheckIn(id: string) {
+  const { error } = await supabase.from('check_ins').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function getBillingContacts() {
   const { data, error } = await supabase
     .from('v_contacts')

@@ -7,9 +7,13 @@ import CrmShell from '@/components/crm/CrmShell';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
   setFollowUp, clearReview,
+  getCheckIns, addCheckIn, deleteCheckIn,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
-  type Contact, type Activity, type RateChange, type Lifecycle,
+  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn,
 } from '@/lib/crm';
+
+// Common accountability check-in types (matches how the legacy sheet was used).
+const CHECKIN_KINDS = ['Face call check-in', 'Thank you', 'Text check-in', 'Progress review', 'Nutrition check-in'];
 
 const money = (n: number | null | undefined) => (n == null ? '—' : `$${Math.round(n).toLocaleString()}`);
 const today = () => new Date().toISOString().slice(0, 10);
@@ -18,6 +22,12 @@ function fmt(ts: string) {
   return new Date(ts).toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
+}
+
+// Date-only ('YYYY-MM-DD'), parsed locally to avoid a UTC off-by-one.
+function fmtDay(s: string) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // Human label for a timeline entry.
@@ -45,9 +55,11 @@ export default function ContactDetailPage() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [rateChanges, setRateChanges] = useState<RateChange[]>([]);
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [addingCheckIn, setAddingCheckIn] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -56,6 +68,9 @@ export default function ContactDetailPage() {
       setContact(d.contact);
       setActivities(d.activities);
       setRateChanges(d.rateChanges);
+      // Check-ins load separately so a missing table (before migration 0005)
+      // doesn't blank the page.
+      try { setCheckIns(await getCheckIns(id)); } catch { setCheckIns([]); }
     } catch {
       setNotFound(true);
     } finally {
@@ -80,6 +95,12 @@ export default function ContactDetailPage() {
     setBusy(true);
     try { await clearReview(id); await load(); }
     finally { setBusy(false); }
+  }
+
+  async function removeCheckIn(ci: CheckIn) {
+    if (!confirm(`Delete this "${ci.kind}" check-in?`)) return;
+    try { await deleteCheckIn(ci.id); await load(); }
+    catch (e: any) { alert(e?.message ?? 'Could not delete'); }
   }
 
   if (loading) return <CrmShell title="Contact"><div className="crm-loading">Loading…</div></CrmShell>;
@@ -160,6 +181,26 @@ export default function ContactDetailPage() {
         </>
       )}
 
+      {/* Accountability check-ins */}
+      <div className="crm-group-title" style={{ justifyContent: 'space-between' }}>
+        <span>Accountability check-ins{checkIns.length > 0 && <span className="count" style={{ marginLeft: 8 }}>{checkIns.length}</span>}</span>
+        <button className="action-btn" style={{ padding: '6px 12px', textTransform: 'none', letterSpacing: 0 }} onClick={() => setAddingCheckIn(true)}>+ Add check-in</button>
+      </div>
+      <div className="crm-card">
+        {checkIns.length === 0 ? (
+          <p style={{ color: 'var(--crm-ink-soft)', padding: '16px 18px' }}>No check-ins logged yet.</p>
+        ) : (
+          checkIns.map((ci) => (
+            <div key={ci.id} className="crm-row" style={{ cursor: 'default' }}>
+              <span className="lc-badge" style={{ background: 'var(--blue-soft)' }}>{ci.kind}</span>
+              <div className="grow">{ci.note && <div className="meta">{ci.note}</div>}</div>
+              <div className="right">{fmtDay(ci.done_on)}</div>
+              <button className="action-btn" style={{ padding: '6px 10px' }} title="Delete check-in" onClick={() => removeCheckIn(ci)}>×</button>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Timeline */}
       <div className="crm-group-title">Activity</div>
       <div className="crm-card" style={{ padding: '4px 22px 8px' }}>
@@ -198,7 +239,68 @@ export default function ContactDetailPage() {
           }}
         />
       )}
+
+      {addingCheckIn && (
+        <CheckInSheet
+          contactId={id}
+          onClose={() => setAddingCheckIn(false)}
+          onSaved={() => { setAddingCheckIn(false); load(); }}
+        />
+      )}
     </CrmShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add check-in sheet
+// ---------------------------------------------------------------------------
+function CheckInSheet({
+  contactId, onClose, onSaved,
+}: {
+  contactId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [kind, setKind] = useState(CHECKIN_KINDS[0]);
+  const [custom, setCustom] = useState('');
+  const [date, setDate] = useState(today());
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const isCustom = kind === '__custom';
+
+  async function save() {
+    const k = isCustom ? custom.trim() : kind;
+    if (!k) return;
+    setBusy(true);
+    try { await addCheckIn(contactId, k, date, note || undefined); onSaved(); }
+    catch (e: any) { alert(e?.message ?? 'Could not save'); setBusy(false); }
+  }
+
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <h3>Add check-in</h3>
+        <div className="field">
+          <label>Type</label>
+          <select value={kind} onChange={(e) => setKind(e.target.value)}>
+            {CHECKIN_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
+            <option value="__custom">Custom…</option>
+          </select>
+        </div>
+        {isCustom && (
+          <div className="field"><label>Custom type</label>
+            <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. Quarterly call" autoFocus /></div>
+        )}
+        <div className="field"><label>Date</label>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+        <div className="field"><label>Note (optional)</label>
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything to remember" /></div>
+        <div className="sheet-actions">
+          <button className="ghost" onClick={onClose}>Cancel</button>
+          <button className="go" disabled={busy || (isCustom && !custom.trim())} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
