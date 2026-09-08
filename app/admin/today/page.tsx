@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
-import { getToday, applyRateChange, type TodayItem } from '@/lib/crm';
+import { getToday, applyRateChange, completeFollowUp, type TodayItem } from '@/lib/crm';
 
 function daysLabel(n: number) {
   if (n <= 0) return 'today';
@@ -16,6 +16,7 @@ export default function TodayPage() {
   const [items, setItems] = useState<TodayItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null);
+  const [completing, setCompleting] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try { setItems(await getToday()); }
@@ -30,6 +31,13 @@ export default function TodayPage() {
     try { await applyRateChange(rateChangeId); await load(); }
     catch (e: any) { alert(e?.message ?? 'Could not apply'); }
     finally { setApplying(null); }
+  }
+
+  async function completeFu(item: TodayItem) {
+    setCompleting(item.item_id);
+    try { await completeFollowUp(item.contact_id, item.due_on); await load(); }
+    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
+    finally { setCompleting(null); }
   }
 
   const rateChanges = items.filter((i) => i.item_type === 'rate_change');
@@ -91,6 +99,13 @@ export default function TodayPage() {
                       <div className="meta">{i.label}</div>
                     </div>
                     <div className="right overdue">{daysLabel(i.days_overdue)}</div>
+                    <button
+                      className="action-btn primary"
+                      onClick={(e) => { e.stopPropagation(); completeFu(i); }}
+                      disabled={completing === i.item_id}
+                    >
+                      {completing === i.item_id ? 'Saving…' : 'Mark done'}
+                    </button>
                   </div>
                 ))}
               </div>

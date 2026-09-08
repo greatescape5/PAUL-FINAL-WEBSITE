@@ -431,6 +431,37 @@ export async function deleteCheckIn(id: string) {
   if (error) throw error
 }
 
+// ---- Completed follow-up log (see migration 0006) ----
+export interface FollowUp {
+  id: string
+  contact_id: string
+  due_on: string | null
+  completed_on: string
+  note: string | null
+  created_at: string
+}
+
+export async function getFollowUps(contactId: string) {
+  const { data, error } = await supabase
+    .from('follow_ups').select('*')
+    .eq('contact_id', contactId)
+    .order('completed_on', { ascending: false })
+  if (error) throw error
+  return data as FollowUp[]
+}
+
+/** Marks the pending follow-up done: logs it, then clears contacts.follow_up_on
+ *  so it drops off Today. Works from Today (pass the due date) or the contact. */
+export async function completeFollowUp(contactId: string, dueOn: string | null, note?: string) {
+  const { error: e1 } = await supabase
+    .from('follow_ups')
+    .insert({ contact_id: contactId, due_on: dueOn, note: note || null })
+  if (e1) throw e1
+  const { error: e2 } = await supabase
+    .from('contacts').update({ follow_up_on: null }).eq('id', contactId)
+  if (e2) throw e2
+}
+
 export async function getBillingContacts() {
   const { data, error } = await supabase
     .from('v_contacts')

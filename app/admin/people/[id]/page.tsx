@@ -8,8 +8,9 @@ import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
   setFollowUp, clearReview,
   getCheckIns, addCheckIn, deleteCheckIn,
+  getFollowUps, completeFollowUp,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
-  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn,
+  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp,
 } from '@/lib/crm';
 
 // Common accountability check-in types (matches how the legacy sheet was used).
@@ -56,6 +57,7 @@ export default function ContactDetailPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [rateChanges, setRateChanges] = useState<RateChange[]>([]);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -68,9 +70,10 @@ export default function ContactDetailPage() {
       setContact(d.contact);
       setActivities(d.activities);
       setRateChanges(d.rateChanges);
-      // Check-ins load separately so a missing table (before migration 0005)
-      // doesn't blank the page.
+      // Check-ins + follow-up log load separately so a missing table (before
+      // migrations 0005/0006) doesn't blank the page.
       try { setCheckIns(await getCheckIns(id)); } catch { setCheckIns([]); }
+      try { setFollowUps(await getFollowUps(id)); } catch { setFollowUps([]); }
     } catch {
       setNotFound(true);
     } finally {
@@ -101,6 +104,13 @@ export default function ContactDetailPage() {
     if (!confirm(`Delete this "${ci.kind}" check-in?`)) return;
     try { await deleteCheckIn(ci.id); await load(); }
     catch (e: any) { alert(e?.message ?? 'Could not delete'); }
+  }
+
+  async function markFollowUpDone() {
+    setBusy(true);
+    try { await completeFollowUp(id, contact?.follow_up_on ?? null); await load(); }
+    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
+    finally { setBusy(false); }
   }
 
   if (loading) return <CrmShell title="Contact"><div className="crm-loading">Loading…</div></CrmShell>;
@@ -153,9 +163,14 @@ export default function ContactDetailPage() {
           </p>
         )}
         {c.follow_up_on && (
-          <p style={{ color: 'var(--crm-ink-soft)', margin: '6px 0 0', fontSize: '0.92rem' }}>
-            Follow-up on <strong>{c.follow_up_on}</strong>
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0 0' }}>
+            <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.92rem' }}>
+              Follow-up on <strong>{fmtDay(c.follow_up_on)}</strong>
+            </span>
+            <button className="action-btn primary" style={{ padding: '6px 14px' }} disabled={busy} onClick={markFollowUpDone}>
+              Mark done
+            </button>
+          </div>
         )}
 
         <div className="action-row">
@@ -175,6 +190,25 @@ export default function ContactDetailPage() {
               <div key={r.id} className="crm-row" style={{ cursor: 'default' }}>
                 <div className="grow"><div className="nm">{money(r.from_rate)} → {money(r.to_rate)}</div>{r.reason && <div className="meta">{r.reason}</div>}</div>
                 <div className="right">effective {r.effective_on}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Completed follow-ups (their own area) */}
+      {followUps.length > 0 && (
+        <>
+          <div className="crm-group-title">Follow-ups <span className="count">{followUps.length}</span></div>
+          <div className="crm-card">
+            {followUps.map((f) => (
+              <div key={f.id} className="crm-row" style={{ cursor: 'default' }}>
+                <span className="lc-badge" style={{ background: '#10b981' }}>Done</span>
+                <div className="grow">
+                  {f.due_on && <div className="meta">Was due {fmtDay(f.due_on)}</div>}
+                  {f.note && <div className="meta">{f.note}</div>}
+                </div>
+                <div className="right">Completed {fmtDay(f.completed_on)}</div>
               </div>
             ))}
           </div>
