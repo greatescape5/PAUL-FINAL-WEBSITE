@@ -27,6 +27,7 @@ export default function PeoplePage() {
   const [groupByStage, setGroupByStage] = useState(true);
   const [stages, setStages] = useState<Stage[]>([]);
   const [creating, setCreating] = useState(false);
+  const [sort, setSort] = useState<'name' | 'tier'>('name');
 
   const load = useCallback(async (lc: Lifecycle) => {
     setLoading(true);
@@ -48,16 +49,34 @@ export default function PeoplePage() {
     );
   }, [rows, q]);
 
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sort === 'tier') {
+      // By tier = by monthly rate, highest first; no-rate contacts last;
+      // name as the tiebreaker.
+      arr.sort((a, b) => {
+        const ra = a.monthly_rate, rb = b.monthly_rate;
+        if (ra == null && rb == null) return a.full_name.localeCompare(b.full_name);
+        if (ra == null) return 1;
+        if (rb == null) return -1;
+        return rb - ra || a.full_name.localeCompare(b.full_name);
+      });
+    } else {
+      arr.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    }
+    return arr;
+  }, [filtered, sort]);
+
   const grouped = useMemo(() => {
     if (seg !== 'lead' || !groupByStage) return null;
     const map = new Map<string, Contact[]>();
-    for (const c of filtered) {
+    for (const c of sorted) {
       const key = c.stage_name ?? 'No stage';
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(c);
     }
     return [...map.entries()];
-  }, [filtered, seg, groupByStage]);
+  }, [sorted, seg, groupByStage]);
 
   const go = (id: string) => router.push(`/admin/people/${id}`);
 
@@ -101,12 +120,19 @@ export default function PeoplePage() {
             Group by stage
           </label>
         )}
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', color: 'var(--crm-ink-soft)' }}>
+          Sort
+          <select value={sort} onChange={(e) => setSort(e.target.value as 'name' | 'tier')} style={{ width: 'auto', padding: '8px 10px' }}>
+            <option value="name">Name</option>
+            <option value="tier">Tier (rate)</option>
+          </select>
+        </label>
         <button className="action-btn primary" onClick={() => setCreating(true)}>+ New contact</button>
       </div>
 
       {loading ? (
         <div className="crm-loading">Loading…</div>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="crm-empty" style={{ padding: '50px 24px' }}>
           <p>{q ? 'No matches.' : `No ${SEGMENTS.find((s) => s.key === seg)?.label.toLowerCase()} yet.`}</p>
         </div>
@@ -118,7 +144,7 @@ export default function PeoplePage() {
           </div>
         ))
       ) : (
-        <div className="crm-card">{filtered.map((c) => <Row key={c.id} c={c} />)}</div>
+        <div className="crm-card">{sorted.map((c) => <Row key={c.id} c={c} />)}</div>
       )}
 
       {creating && (
