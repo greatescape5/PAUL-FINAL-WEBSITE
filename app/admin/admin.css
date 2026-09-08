@@ -190,6 +190,8 @@
 .crm-table tbody tr:last-child td { border-bottom: none; }
 .crm-table tbody tr:hover { background: #f7f9fb; }
 
+.crm-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px; color: var(--crm-ink-soft); font-size: 0.9rem; }
+
 .rec-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 9px; border-radius: 999px; }
 .rec-badge.monthly { background: #e2eefa; color: #2f6aa8; }
 .rec-badge.one_time { background: #eceef1; color: #6b7681; }

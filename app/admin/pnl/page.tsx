@@ -27,6 +27,7 @@ export default function PnlPage() {
   const [mrr, setMrr] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sheet, setSheet] = useState<null | Expense | 'new'>(null);
+  const [page, setPage] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -104,6 +105,11 @@ export default function PnlPage() {
     return out;
   }, [expenses, billing]);
 
+  const PAGE_SIZE = 10;
+  const pageCount = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const pageItems = expenses.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+
   async function del(e: Expense) {
     if (!confirm(`Remove "${e.name}"?`)) return;
     await archiveExpense(e.id);
@@ -174,21 +180,30 @@ export default function PnlPage() {
           {expenses.length === 0 ? (
             <div className="crm-empty" style={{ padding: '36px 24px' }}><p>No expenses yet — add your first above.</p></div>
           ) : (
-            <div className="crm-card">
-              {expenses.map((e) => (
-                <div key={e.id} className="crm-row" onClick={() => setSheet(e)}>
-                  <span className={`rec-badge ${e.recurrence}`}>{e.recurrence === 'monthly' ? 'Monthly' : 'One-time'}</span>
-                  <div className="grow">
-                    <div className="nm">{e.name}</div>
-                    <div className="meta">{fmtDate(e.incurred_on)}</div>
+            <>
+              <div className="crm-card">
+                {pageItems.map((e) => (
+                  <div key={e.id} className="crm-row" onClick={() => setSheet(e)}>
+                    <span className={`rec-badge ${e.recurrence}`}>{e.recurrence === 'monthly' ? 'Monthly' : 'One-time'}</span>
+                    <div className="grow">
+                      <div className="nm">{e.name}</div>
+                      <div className="meta">{fmtDate(e.incurred_on)}</div>
+                    </div>
+                    <div className="right">
+                      <span className="rate">{money(Number(e.amount), true)}{e.recurrence === 'monthly' && <span style={{ color: 'var(--crm-ink-mute)', fontWeight: 400 }}>/mo</span>}</span>
+                    </div>
+                    <button className="action-btn" style={{ padding: '6px 10px' }} onClick={(ev) => { ev.stopPropagation(); del(e); }}>Delete</button>
                   </div>
-                  <div className="right">
-                    <span className="rate">{money(Number(e.amount), true)}{e.recurrence === 'monthly' && <span style={{ color: 'var(--crm-ink-mute)', fontWeight: 400 }}>/mo</span>}</span>
-                  </div>
-                  <button className="action-btn" style={{ padding: '6px 10px' }} onClick={(ev) => { ev.stopPropagation(); del(e); }}>Delete</button>
+                ))}
+              </div>
+              {pageCount > 1 && (
+                <div className="crm-pager">
+                  <button className="action-btn" disabled={current === 0} onClick={() => setPage(current - 1)}>← Prev</button>
+                  <span>Page {current + 1} of {pageCount}</span>
+                  <button className="action-btn" disabled={current >= pageCount - 1} onClick={() => setPage(current + 1)}>Next →</button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </>
       )}
