@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BUSINESS } from '@/lib/site';
+import NewsletterForm from './NewsletterForm';
 
 export default function SiteFooter() {
   const pathname = usePathname();
@@ -36,6 +37,13 @@ export default function SiteFooter() {
             <p style={{ margin: 0 }}>
               <a href={BUSINESS.social.instagram} target="_blank" rel="noopener">{BUSINESS.instagramHandle}</a>
             </p>
+          </div>
+          <div style={{ maxWidth: 320 }}>
+            <h4>Monthly newsletter</h4>
+            <p style={{ margin: '0 0 12px' }}>
+              Training tips and updates — one email a month, no spam.
+            </p>
+            <NewsletterForm source="footer" compact />
           </div>
         </div>
         <div className="fine">

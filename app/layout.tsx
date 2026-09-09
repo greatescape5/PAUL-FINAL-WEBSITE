@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import NewsletterPopup from '@/components/NewsletterPopup';
 import Analytics from '@/components/Analytics';
 import JsonLd from '@/components/JsonLd';
 import { SITE_URL, BUSINESS } from '@/lib/site';
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
+        <NewsletterPopup />
         <Analytics />
       </body>
     </html>

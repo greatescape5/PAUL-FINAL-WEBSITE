@@ -531,6 +531,39 @@ input:focus, select:focus, textarea:focus {
 .site-footer .credit { text-align: center; margin: 16px 0 0; font-size: 0.85rem; color: var(--on-blue-dim); }
 .site-footer .credit a { text-decoration: underline; text-underline-offset: 3px; }
 
+/* ---------- Newsletter signup (footer + popup) ---------- */
+.newsletter-form { width: 100%; }
+.newsletter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.newsletter-row input[type="email"] {
+  flex: 1; min-width: 0; padding: 11px 13px; border-radius: 9px;
+  border: 1px solid rgba(0,0,0,0.15); font: inherit; background: #fff; color: #111;
+}
+.newsletter-row input[type="email"]:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(85,128,172,0.22); }
+.newsletter-form .btn-primary { white-space: nowrap; padding: 11px 18px; }
+.newsletter-ok { margin: 0; font-weight: 600; }
+.newsletter-err { margin: 8px 0 0; font-size: 0.85rem; color: #ffd7d7; }
+.site-footer .newsletter-ok { color: #d6f5e3; }
+
+.newsletter-pop-backdrop {
+  position: fixed; inset: 0; z-index: 1000; background: rgba(17, 24, 39, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: nlfade 0.18s ease-out;
+}
+@keyframes nlfade { from { opacity: 0; } to { opacity: 1; } }
+.newsletter-pop {
+  position: relative; background: #fff; color: #111; border-radius: 16px;
+  max-width: 420px; width: 100%; padding: 30px 28px 26px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+}
+.newsletter-pop h3 { margin: 0 0 8px; font-size: 1.4rem; color: var(--blue-deep); }
+.newsletter-pop p { margin: 0 0 16px; color: #444; line-height: 1.5; }
+.newsletter-pop .newsletter-err { color: var(--red); }
+.newsletter-pop-close {
+  position: absolute; top: 10px; right: 12px; border: none; background: none;
+  font-size: 1.6rem; line-height: 1; cursor: pointer; color: #999; padding: 4px 8px;
+}
+.newsletter-pop-close:hover { color: #333; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }

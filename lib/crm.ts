@@ -504,6 +504,39 @@ export async function completeFollowUp(
   if (e2) throw e2
 }
 
+// ---- Newsletter subscribers (see migration 0009) ----
+export interface Subscriber {
+  id: string
+  email: string
+  name: string | null
+  source: string
+  status: 'subscribed' | 'unsubscribed'
+  source_detail: Record<string, unknown> | null
+  created_at: string
+  unsubscribed_at: string | null
+}
+
+export async function getSubscribers() {
+  const { data, error } = await supabase
+    .from('subscribers').select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as Subscriber[]
+}
+
+export async function setSubscriberStatus(id: string, status: 'subscribed' | 'unsubscribed') {
+  const { error } = await supabase.from('subscribers').update({
+    status,
+    unsubscribed_at: status === 'unsubscribed' ? new Date().toISOString() : null,
+  }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteSubscriber(id: string) {
+  const { error } = await supabase.from('subscribers').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function getBillingContacts() {
   const { data, error } = await supabase
     .from('v_contacts')
