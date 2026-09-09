@@ -516,6 +516,48 @@ export interface Subscriber {
   unsubscribed_at: string | null
 }
 
+export interface Broadcast {
+  id: string
+  subject: string
+  body_html: string
+  sent_count: number
+  sent_at: string
+}
+
+export async function getBroadcasts() {
+  const { data, error } = await supabase
+    .from('newsletter_broadcasts').select('id,subject,body_html,sent_count,sent_at')
+    .order('sent_at', { ascending: false })
+  if (error) throw error
+  return data as Broadcast[]
+}
+
+/** Uploads an image to the public `newsletter` bucket, returns its public URL. */
+export async function uploadNewsletterImage(file: File) {
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage.from('newsletter').upload(path, file, {
+    cacheControl: '31536000', contentType: file.type || undefined, upsert: false,
+  })
+  if (error) throw error
+  const { data } = supabase.storage.from('newsletter').getPublicUrl(path)
+  return data.publicUrl
+}
+
+/** Sends the composed newsletter to all subscribed contacts (via the server). */
+export async function sendNewsletter(subject: string, html: string): Promise<{ sent: number }> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Your session expired — sign in again.')
+  const res = await fetch('/api/newsletter/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ subject, html }),
+  })
+  const out = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(out?.error || 'Send failed')
+  return { sent: out.sent ?? 0 }
+}
+
 export async function getSubscribers() {
   const { data, error } = await supabase
     .from('subscribers').select('*')

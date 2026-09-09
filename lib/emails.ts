@@ -18,7 +18,7 @@ function esc(s: string | null | undefined): string {
 const firstName = (name: string | null | undefined) => (name ?? '').trim().split(/\s+/)[0] || 'there';
 
 // Shared document shell: signature stripe, blue footer with the mailing address.
-function shell(opts: { title: string; preheader: string; body: string; footerNote: string }): string {
+function shell(opts: { title: string; preheader: string; body: string; footerNote: string; extraStyles?: string }): string {
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -33,6 +33,7 @@ function shell(opts: { title: string; preheader: string; body: string; footerNot
   body { margin:0 !important; padding:0 !important; width:100% !important; background:#eaf0f6; }
   a { color:#456a92; }
   @media screen and (max-width:600px) { .container { width:100% !important; } .px { padding-left:24px !important; padding-right:24px !important; } }
+  ${opts.extraStyles ?? ''}
 </style>
 </head>
 <body style="margin:0; padding:0; background-color:#eaf0f6;">
@@ -173,5 +174,69 @@ export function inquiryAutoreplyEmail(o: { name: string; message: string }) {
       footerNote: `You're getting this because you sent a message through ${BUSINESS.name}. ${BUSINESS.address.city}, ${BUSINESS.address.regionName}.`,
     }),
     text,
+  };
+}
+
+// ---------------------------------------------------------------
+// 3. Welcome / confirmation (to a new newsletter subscriber)
+// ---------------------------------------------------------------
+export function welcomeEmail(o: { unsubscribeUrl: string }) {
+  const body = `
+  <tr><td class="px" align="center" style="padding:26px 40px 0 40px;">
+    <h1 style="margin:0 0 14px 0; font-family:${SANS}; font-size:28px; line-height:1.25; font-weight:600; color:#26313d;">You&rsquo;re on the list.</h1>
+    <p style="margin:0; font-family:${SANS}; font-size:15px; line-height:1.7; color:#4c5763;">Thanks for subscribing to the ${BUSINESS.name} newsletter. Once a month you&rsquo;ll get training tips, mindset, and the occasional recipe &mdash; nothing more, no spam.</p>
+  </td></tr>
+  <tr><td class="px" align="center" style="padding:28px 40px 0 40px;">
+    ${redButton(absoluteUrl('/'), 'Visit the website')}
+  </td></tr>`;
+
+  const text =
+    `You're on the list.\n\nThanks for subscribing to the ${BUSINESS.name} newsletter — once a month, training tips and updates, no spam.\n\n` +
+    `To unsubscribe at any time: ${o.unsubscribeUrl}`;
+
+  return {
+    subject: `Welcome to the ${BUSINESS.name} newsletter`,
+    html: shell({
+      title: 'Welcome to the newsletter',
+      preheader: 'One email a month — training tips and updates.',
+      body,
+      footerNote: `You subscribed at ${BUSINESS.name}. <a href="${o.unsubscribeUrl}" style="color:#d3dfec; text-decoration:underline;">Unsubscribe</a>.`,
+    }),
+    text,
+  };
+}
+
+// ---------------------------------------------------------------
+// 4. The monthly newsletter itself (client-authored body)
+// ---------------------------------------------------------------
+// `contentHtml` is the sanitized, style-inlined body from the CRM composer.
+export function newsletterEmail(o: { subject: string; contentHtml: string; unsubscribeUrl: string }) {
+  const contentStyles = `
+    .nl-content { font-family:${SANS}; font-size:16px; line-height:1.7; color:#26313d; }
+    .nl-content h1 { font-size:26px; line-height:1.3; font-weight:700; margin:20px 0 10px; color:#26313d; }
+    .nl-content h2 { font-size:22px; line-height:1.3; font-weight:700; margin:18px 0 8px; color:#26313d; }
+    .nl-content h3 { font-size:18px; line-height:1.35; font-weight:700; margin:16px 0 6px; color:#26313d; }
+    .nl-content p { margin:0 0 14px; }
+    .nl-content a { color:#456a92; }
+    .nl-content img { max-width:100%; height:auto; border-radius:8px; margin:10px 0; }
+    .nl-content ul, .nl-content ol { margin:0 0 14px; padding-left:22px; }
+    .nl-content li { margin:0 0 6px; }`;
+
+  const body = `
+  <tr><td class="px" style="padding:26px 40px 0 40px;">
+    <div class="nl-content" style="font-family:${SANS}; font-size:16px; line-height:1.7; color:#26313d;">
+      ${o.contentHtml}
+    </div>
+  </td></tr>`;
+
+  return {
+    subject: o.subject,
+    html: shell({
+      title: o.subject,
+      preheader: o.subject,
+      body,
+      footerNote: `You subscribed to the ${BUSINESS.name} newsletter. <a href="${o.unsubscribeUrl}" style="color:#d3dfec; text-decoration:underline;">Unsubscribe</a>.`,
+      extraStyles: contentStyles,
+    }),
   };
 }

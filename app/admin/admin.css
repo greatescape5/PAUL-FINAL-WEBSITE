@@ -227,3 +227,36 @@
   .sheet .opt-grid { grid-template-columns: 1fr; }
   .crm-stats { grid-template-columns: 1fr; }
 }
+
+/* ---------- Newsletter composer ---------- */
+.nl-composer .field { margin-bottom: 16px; }
+.nl-toolbar {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; margin-bottom: 0;
+  background: #f4f6f9; border: 1px solid var(--crm-border); border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+.nl-tool {
+  border: 1px solid var(--crm-border); background: #fff; border-radius: 7px;
+  padding: 6px 11px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+  color: var(--crm-ink); font-family: inherit; min-width: 32px;
+}
+.nl-tool:hover { background: #eef2f7; }
+.nl-tool:disabled { opacity: 0.5; cursor: default; }
+.nl-editor {
+  min-height: 240px; padding: 16px 18px; border: 1px solid var(--crm-border);
+  border-radius: 0 0 10px 10px; background: #fff; overflow-y: auto; max-height: 460px;
+}
+.nl-editor:focus { outline: none; border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.nl-editor:empty::before { content: 'Write your newsletter…'; color: var(--crm-ink-mute); }
+.nl-hint { margin: 8px 0 0; font-size: 0.82rem; color: var(--crm-ink-mute); }
+.nl-composer-err { color: var(--red); font-size: 0.9rem; margin: 4px 0 10px; }
+
+/* Preview typography inside the editor, mirroring the sent email. */
+.nl-content h1 { font-size: 26px; line-height: 1.3; font-weight: 700; margin: 20px 0 10px; }
+.nl-content h2 { font-size: 22px; line-height: 1.3; font-weight: 700; margin: 18px 0 8px; }
+.nl-content h3 { font-size: 18px; line-height: 1.35; font-weight: 700; margin: 16px 0 6px; }
+.nl-content p { margin: 0 0 14px; }
+.nl-content a { color: #456a92; }
+.nl-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
+.nl-content ul, .nl-content ol { margin: 0 0 14px; padding-left: 22px; }
+.nl-content li { margin: 0 0 6px; }

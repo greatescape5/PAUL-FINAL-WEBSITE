@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CrmShell from '@/components/crm/CrmShell';
-import { getSubscribers, setSubscriberStatus, deleteSubscriber, type Subscriber } from '@/lib/crm';
+import NewsletterComposer from '@/components/crm/NewsletterComposer';
+import {
+  getSubscribers, setSubscriberStatus, deleteSubscriber, getBroadcasts,
+  type Subscriber, type Broadcast,
+} from '@/lib/crm';
 
 // Friendly label for where someone signed up.
 const SOURCE_LABEL: Record<string, string> = {
@@ -44,9 +48,11 @@ function toCsv(rows: Subscriber[]): string {
 
 export default function SubscriptionsPage() {
   const [rows, setRows] = useState<Subscriber[]>([]);
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [composing, setComposing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,7 +61,11 @@ export default function SubscriptionsPage() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadBroadcasts = useCallback(async () => {
+    try { setBroadcasts(await getBroadcasts()); } catch { setBroadcasts([]); }
+  }, []);
+
+  useEffect(() => { load(); loadBroadcasts(); }, [load, loadBroadcasts]);
 
   const filtered = useMemo(() => {
     if (filter === 'all') return rows;
@@ -108,10 +118,27 @@ export default function SubscriptionsPage() {
         <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
           {activeCount} subscribed · {rows.length} total
         </span>
-        <button className="action-btn primary" onClick={exportCsv} disabled={filtered.length === 0}>
+        <button className="action-btn" onClick={exportCsv} disabled={filtered.length === 0}>
           Export CSV
         </button>
+        <button className="action-btn primary" onClick={() => setComposing((v) => !v)}>
+          {composing ? 'Close composer' : '✉ Compose newsletter'}
+        </button>
       </div>
+
+      {composing && (
+        <div className="crm-card" style={{ padding: '20px 22px', marginBottom: 20 }}>
+          <div className="crm-group-title" style={{ marginTop: 0 }}>New newsletter</div>
+          <NewsletterComposer
+            recipientCount={activeCount}
+            onSent={(sent) => {
+              setComposing(false);
+              loadBroadcasts();
+              alert(`Sent to ${sent} subscriber${sent === 1 ? '' : 's'}.`);
+            }}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="crm-loading">Loading…</div>
@@ -152,6 +179,23 @@ export default function SubscriptionsPage() {
             );
           })}
         </div>
+      )}
+
+      {broadcasts.length > 0 && (
+        <>
+          <div className="crm-group-title">Sent newsletters <span className="count">{broadcasts.length}</span></div>
+          <div className="crm-card">
+            {broadcasts.map((b) => (
+              <div key={b.id} className="crm-row" style={{ cursor: 'default' }}>
+                <div className="grow">
+                  <div className="nm">{b.subject}</div>
+                  <div className="meta">{b.sent_count} recipient{b.sent_count === 1 ? '' : 's'}</div>
+                </div>
+                <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDate(b.sent_at)}</div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </CrmShell>
   );
