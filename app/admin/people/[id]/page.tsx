@@ -171,6 +171,7 @@ export default function ContactDetailPage() {
 
         <div className="action-row">
           <button className="action-btn primary" onClick={() => setSheet('status')}>Change status</button>
+          <button className="action-btn" onClick={() => setAddingCheckIn(true)}>Add check-in</button>
           <button className="action-btn" onClick={() => setSheet('followup')}>Set follow-up</button>
           <button className="action-btn" onClick={() => setSheet('rate')}>Schedule rate change</button>
           <button className="action-btn" onClick={() => setSheet('note')}>Add note</button>
@@ -212,9 +213,8 @@ export default function ContactDetailPage() {
       )}
 
       {/* Accountability check-ins */}
-      <div className="crm-group-title" style={{ justifyContent: 'space-between' }}>
-        <span>Accountability check-ins{checkIns.length > 0 && <span className="count" style={{ marginLeft: 8 }}>{checkIns.length}</span>}</span>
-        <button className="action-btn" style={{ padding: '6px 12px', textTransform: 'none', letterSpacing: 0 }} onClick={() => setAddingCheckIn(true)}>+ Add check-in</button>
+      <div className="crm-group-title">
+        Accountability check-ins{checkIns.length > 0 && <span className="count" style={{ marginLeft: 8 }}>{checkIns.length}</span>}
       </div>
       <div className="crm-card">
         {checkIns.length === 0 ? (
