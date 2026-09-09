@@ -90,6 +90,7 @@ export async function POST(req: Request) {
 
   // ---- Send via Resend in batches of 100 (each with its own unsubscribe link) ----
   let sent = 0;
+  const sentEmails: string[] = [];
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(resendKey);
@@ -107,6 +108,7 @@ export async function POST(req: Request) {
         console.error('Resend batch error:', error);
       } else {
         sent += batch.length;
+        for (const r of group) sentEmails.push(r.email as string);
       }
     }
   } catch (err) {
@@ -114,9 +116,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Sending failed partway through. Some emails may have gone out.' }, { status: 500 });
   }
 
-  // ---- Log the broadcast ----
+  // ---- Log the broadcast (with the exact recipient list) ----
   await admin.from('newsletter_broadcasts').insert({
-    subject, body_html: cleaned, sent_count: sent, created_by: userData.user.id,
+    subject, body_html: cleaned, sent_count: sent, recipients: sentEmails, created_by: userData.user.id,
   });
 
   return NextResponse.json({ ok: true, sent });

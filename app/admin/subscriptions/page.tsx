@@ -26,8 +26,13 @@ function landingPage(sub: Subscriber): string | null {
 function fmtDate(ts: string) {
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+function fmtDateTime(ts: string) {
+  return new Date(ts).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
+}
 
-type Filter = 'all' | 'subscribed' | 'unsubscribed';
+type Filter = 'all' | 'subscribed' | 'unsubscribed' | 'history';
 
 function toCsv(rows: Subscriber[]): string {
   const esc = (v: unknown) => {
@@ -53,6 +58,7 @@ export default function SubscriptionsPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [viewing, setViewing] = useState<Broadcast | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,19 +114,27 @@ export default function SubscriptionsPage() {
     <CrmShell title="Subscriptions">
       <div className="crm-toolbar">
         <div className="seg">
-          {(['all', 'subscribed', 'unsubscribed'] as Filter[]).map((f) => (
+          {(['all', 'subscribed', 'unsubscribed', 'history'] as Filter[]).map((f) => (
             <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-              {f === 'all' ? 'All' : f === 'subscribed' ? 'Subscribed' : 'Unsubscribed'}
+              {f === 'all' ? 'All' : f === 'subscribed' ? 'Subscribed' : f === 'unsubscribed' ? 'Unsubscribed' : 'History'}
             </button>
           ))}
         </div>
         <div style={{ flex: 1 }} />
-        <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
-          {activeCount} subscribed · {rows.length} total
-        </span>
-        <button className="action-btn" onClick={exportCsv} disabled={filtered.length === 0}>
-          Export CSV
-        </button>
+        {filter === 'history' ? (
+          <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
+            {broadcasts.length} sent
+          </span>
+        ) : (
+          <>
+            <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
+              {activeCount} subscribed · {rows.length} total
+            </span>
+            <button className="action-btn" onClick={exportCsv} disabled={filtered.length === 0}>
+              Export CSV
+            </button>
+          </>
+        )}
         <button className="action-btn primary" onClick={() => setComposing((v) => !v)}>
           {composing ? 'Close composer' : '✉ Compose newsletter'}
         </button>
@@ -140,7 +154,26 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {loading ? (
+      {filter === 'history' ? (
+        broadcasts.length === 0 ? (
+          <div className="crm-empty" style={{ padding: '50px 24px' }}>
+            <p>No newsletters sent yet. Compose one to get started.</p>
+          </div>
+        ) : (
+          <div className="crm-card">
+            {broadcasts.map((b) => (
+              <div key={b.id} className="crm-row" onClick={() => setViewing(b)} style={{ cursor: 'pointer' }}>
+                <span className="lc-badge" style={{ background: 'var(--blue)' }}>Sent</span>
+                <div className="grow">
+                  <div className="nm">{b.subject}</div>
+                  <div className="meta">{b.sent_count} recipient{b.sent_count === 1 ? '' : 's'}</div>
+                </div>
+                <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDateTime(b.sent_at)}</div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : loading ? (
         <div className="crm-loading">Loading…</div>
       ) : filtered.length === 0 ? (
         <div className="crm-empty" style={{ padding: '50px 24px' }}>
@@ -181,21 +214,29 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {broadcasts.length > 0 && (
-        <>
-          <div className="crm-group-title">Sent newsletters <span className="count">{broadcasts.length}</span></div>
-          <div className="crm-card">
-            {broadcasts.map((b) => (
-              <div key={b.id} className="crm-row" style={{ cursor: 'default' }}>
-                <div className="grow">
-                  <div className="nm">{b.subject}</div>
-                  <div className="meta">{b.sent_count} recipient{b.sent_count === 1 ? '' : 's'}</div>
-                </div>
-                <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDate(b.sent_at)}</div>
-              </div>
-            ))}
+      {viewing && (
+        <div className="sheet-backdrop" onClick={() => setViewing(null)}>
+          <div className="nl-history-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="newsletter-pop-close" onClick={() => setViewing(null)} aria-label="Close">×</button>
+            <h3 style={{ margin: '0 6px 4px 0' }}>{viewing.subject}</h3>
+            <div className="meta" style={{ color: 'var(--crm-ink-soft)', marginBottom: 14 }}>
+              Sent {fmtDateTime(viewing.sent_at)} · {viewing.sent_count} recipient{viewing.sent_count === 1 ? '' : 's'}
+            </div>
+            <iframe className="nl-preview-frame" srcDoc={viewing.body_html} title="Newsletter preview" />
+            <div className="crm-group-title" style={{ marginTop: 22 }}>
+              Sent to <span className="count">{viewing.recipients?.length ?? 0}</span>
+            </div>
+            {viewing.recipients && viewing.recipients.length > 0 ? (
+              <ul className="nl-recipients">
+                {viewing.recipients.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            ) : (
+              <p style={{ color: 'var(--crm-ink-mute)', margin: 0 }}>
+                Recipient list wasn&rsquo;t recorded for this send.
+              </p>
+            )}
           </div>
-        </>
+        </div>
       )}
     </CrmShell>
   );

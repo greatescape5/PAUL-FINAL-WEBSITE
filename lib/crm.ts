@@ -522,11 +522,12 @@ export interface Broadcast {
   body_html: string
   sent_count: number
   sent_at: string
+  recipients: string[]
 }
 
 export async function getBroadcasts() {
   const { data, error } = await supabase
-    .from('newsletter_broadcasts').select('id,subject,body_html,sent_count,sent_at')
+    .from('newsletter_broadcasts').select('id,subject,body_html,sent_count,sent_at,recipients')
     .order('sent_at', { ascending: false })
   if (error) throw error
   return data as Broadcast[]

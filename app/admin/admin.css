@@ -260,3 +260,23 @@
 .nl-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
 .nl-content ul, .nl-content ol { margin: 0 0 14px; padding-left: 22px; }
 .nl-content li { margin: 0 0 6px; }
+
+/* ---------- Newsletter history modal ---------- */
+.nl-history-modal {
+  position: relative; background: var(--crm-surface); border-radius: 14px;
+  width: min(720px, 94vw); max-height: 88vh; overflow-y: auto;
+  padding: 26px 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+}
+.nl-preview-frame {
+  width: 100%; height: 460px; border: 1px solid var(--crm-border);
+  border-radius: 10px; background: #eaf0f6;
+}
+.nl-recipients {
+  list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 24px;
+  font-size: 0.9rem; color: var(--crm-ink);
+}
+.nl-recipients li {
+  padding: 4px 0; border-bottom: 1px solid var(--crm-border);
+  break-inside: avoid; overflow-wrap: anywhere;
+}
+@media (max-width: 640px) { .nl-recipients { columns: 1; } }
