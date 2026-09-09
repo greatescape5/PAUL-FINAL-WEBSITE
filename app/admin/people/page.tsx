@@ -25,17 +25,25 @@ function priceLike(name: string, rate: number) {
   return n === String(rate) || Number(n) === rate;
 }
 
+// Remember the People view (tab, sort, grouping, search) across navigation.
+const VIEW_KEY = 'crm.people.view';
+type SavedView = { seg?: Lifecycle; sort?: 'name' | 'tier'; q?: string; groupByStage?: boolean };
+function readView(): SavedView {
+  if (typeof window === 'undefined') return {};
+  try { return JSON.parse(sessionStorage.getItem(VIEW_KEY) || '{}'); } catch { return {}; }
+}
+
 export default function PeoplePage() {
   const router = useRouter();
-  const [seg, setSeg] = useState<Lifecycle>('client');
+  const [seg, setSeg] = useState<Lifecycle>(() => readView().seg ?? 'client');
   const [rows, setRows] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState('');
-  const [groupByStage, setGroupByStage] = useState(true);
+  const [q, setQ] = useState(() => readView().q ?? '');
+  const [groupByStage, setGroupByStage] = useState(() => readView().groupByStage ?? true);
   const [stages, setStages] = useState<Stage[]>([]);
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [creating, setCreating] = useState(false);
-  const [sort, setSort] = useState<'name' | 'tier'>('tier');
+  const [sort, setSort] = useState<'name' | 'tier'>(() => readView().sort ?? 'tier');
 
   const load = useCallback(async (lc: Lifecycle) => {
     setLoading(true);
@@ -47,6 +55,11 @@ export default function PeoplePage() {
   useEffect(() => { load(seg); }, [seg, load]);
   useEffect(() => { getStages().then(setStages).catch(() => {}); }, []);
   useEffect(() => { getTiers().then(setTiers).catch(() => {}); }, []);
+
+  // Persist the view so returning from a contact restores the same tab/sort.
+  useEffect(() => {
+    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ seg, sort, q, groupByStage })); } catch { /* ignore */ }
+  }, [seg, sort, q, groupByStage]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
