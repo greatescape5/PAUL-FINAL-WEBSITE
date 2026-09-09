@@ -4,9 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import CrmShell from '@/components/crm/CrmShell';
 import {
   getExpenses, createExpense, updateExpense, archiveExpense,
-  getBillingContacts, getMrr,
-  type Expense, type Recurrence, type BillingContact,
+  getBillingContacts, getMrr, getTiers,
+  type Expense, type Recurrence, type BillingContact, type Tier,
 } from '@/lib/crm';
+
+// Is a tier name essentially just its price (e.g. seeded "$299")?
+function priceLike(name: string, rate: number) {
+  const n = name.trim().replace(/\/mo$/i, '').replace(/[$,\s]/g, '');
+  return n === String(rate) || Number(n) === rate;
+}
 
 const money = (n: number, cents = false) =>
   `${n < 0 ? '-' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 })}`;
@@ -24,21 +30,25 @@ const EXPENSE_COLOR = '#b51f21';
 export default function PnlPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [billing, setBilling] = useState<BillingContact[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [mrr, setMrr] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sheet, setSheet] = useState<null | Expense | 'new'>(null);
   const [page, setPage] = useState(0);
+  const [tab, setTab] = useState<'overview' | 'tiers' | 'expenses'>('overview');
 
   const load = useCallback(async () => {
     try {
-      const [exp, bill, mrrRow] = await Promise.all([
+      const [exp, bill, mrrRow, tierRows] = await Promise.all([
         getExpenses().catch(() => []),
         getBillingContacts().catch(() => []),
         getMrr().catch(() => ({ mrr: 0 } as any)),
+        getTiers().catch(() => []),
       ]);
       setExpenses(exp);
       setBilling(bill);
       setMrr(Number(mrrRow?.mrr ?? 0));
+      setTiers(tierRows);
     } finally {
       setLoading(false);
     }
@@ -105,6 +115,22 @@ export default function PnlPage() {
     return out;
   }, [expenses, billing]);
 
+  // MRR broken down by price point (active clients only), highest first.
+  const byTier = useMemo(() => {
+    const clients = billing.filter((c) => c.lifecycle === 'client' && c.monthly_rate != null);
+    const map = new Map<number, { count: number; total: number }>();
+    for (const c of clients) {
+      const r = Number(c.monthly_rate);
+      const e = map.get(r) ?? { count: 0, total: 0 };
+      e.count += 1; e.total += r;
+      map.set(r, e);
+    }
+    return [...map.entries()]
+      .map(([rate, v]) => ({ rate, count: v.count, total: v.total, tier: tiers.find((t) => Number(t.price) === rate) }))
+      .sort((a, b) => b.rate - a.rate);
+  }, [billing, tiers]);
+  const totalClients = byTier.reduce((s, r) => s + r.count, 0);
+
   const PAGE_SIZE = 10;
   const pageCount = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE));
   const current = Math.min(page, pageCount - 1);
@@ -122,10 +148,19 @@ export default function PnlPage() {
         <div className="crm-loading">Loading…</div>
       ) : (
         <>
-          <div className="crm-toolbar" style={{ justifyContent: 'flex-end' }}>
-            <button className="action-btn primary" onClick={() => setSheet('new')}>+ Add expense</button>
+          <div className="crm-toolbar">
+            <div className="seg">
+              <button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Overview</button>
+              <button className={tab === 'tiers' ? 'active' : ''} onClick={() => setTab('tiers')}>By tier</button>
+              <button className={tab === 'expenses' ? 'active' : ''} onClick={() => setTab('expenses')}>Expenses</button>
+            </div>
+            {tab === 'expenses' && (
+              <button className="action-btn primary" style={{ marginLeft: 'auto' }} onClick={() => setSheet('new')}>+ Add expense</button>
+            )}
           </div>
 
+          {tab === 'overview' && (
+          <>
           <div className="crm-stats">
             <div className="crm-stat">
               <div className="val" style={{ color: REVENUE_COLOR }}>{money(mrr)}</div>
@@ -170,12 +205,47 @@ export default function PnlPage() {
               </tbody>
             </table>
           </div>
+          </>
+          )}
 
-          <div className="crm-group-title" style={{ marginTop: 34 }}>
-            Expenses <span className="count">{expenses.length}</span>
+          {tab === 'tiers' && (
+          <>
+          <div className="crm-group-title">Monthly revenue by tier</div>
+          <div className="crm-card" style={{ padding: '4px 12px' }}>
+            <table className="crm-table">
+              <thead><tr><th>Tier</th><th>Clients</th><th>MRR</th></tr></thead>
+              <tbody>
+                {byTier.length === 0 ? (
+                  <tr><td colSpan={3} style={{ color: 'var(--crm-ink-soft)' }}>No active clients yet.</td></tr>
+                ) : (
+                  <>
+                    {byTier.map((row) => {
+                      const realName = row.tier && !priceLike(row.tier.name, row.rate) ? row.tier.name : null;
+                      return (
+                        <tr key={row.rate}>
+                          <td>{realName ? <>{realName} <span style={{ color: 'var(--crm-ink-mute)', fontWeight: 400 }}>${row.rate}/mo</span></> : `$${row.rate}/mo`}</td>
+                          <td>{row.count}</td>
+                          <td style={{ color: REVENUE_COLOR, fontWeight: 700 }}>{money(row.total)}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr style={{ borderTop: '2px solid var(--crm-border)' }}>
+                      <td style={{ fontWeight: 700 }}>Total</td>
+                      <td style={{ fontWeight: 700 }}>{totalClients}</td>
+                      <td style={{ color: REVENUE_COLOR, fontWeight: 700 }}>{money(mrr)}</td>
+                    </tr>
+                  </>
+                )}
+              </tbody>
+            </table>
           </div>
-          <p className="form-note" style={{ margin: '-6px 0 12px', color: 'var(--crm-ink-soft)' }}>
-            Revenue is calculated automatically from your active client subscriptions. Add costs below.
+          </>
+          )}
+
+          {tab === 'expenses' && (
+          <>
+          <p className="form-note" style={{ margin: '0 0 12px', color: 'var(--crm-ink-soft)' }}>
+            Revenue is calculated automatically from your active client subscriptions. Add costs with the button above.
           </p>
           {expenses.length === 0 ? (
             <div className="crm-empty" style={{ padding: '36px 24px' }}><p>No expenses yet — add your first above.</p></div>
@@ -204,6 +274,8 @@ export default function PnlPage() {
                 </div>
               )}
             </>
+          )}
+          </>
           )}
         </>
       )}
