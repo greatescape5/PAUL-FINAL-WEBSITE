@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
 import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
-import { getToday, applyRateChange, type TodayItem } from '@/lib/crm';
+import { getToday, applyRateChange, completeCheckIn, type TodayItem } from '@/lib/crm';
 
 function daysLabel(n: number) {
   if (n <= 0) return 'today';
@@ -18,6 +18,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null);
   const [completingItem, setCompletingItem] = useState<TodayItem | null>(null);
+  const [doneCheckId, setDoneCheckId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try { setItems(await getToday()); }
@@ -35,8 +36,16 @@ export default function TodayPage() {
   }
 
 
+  async function doneCheckIn(item: TodayItem) {
+    setDoneCheckId(item.item_id);
+    try { await completeCheckIn(item.item_id); await load(); }
+    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
+    finally { setDoneCheckId(null); }
+  }
+
   const rateChanges = items.filter((i) => i.item_type === 'rate_change');
   const followUps = items.filter((i) => i.item_type === 'follow_up');
+  const checkInsToday = items.filter((i) => i.item_type === 'check_in');
   const staleLeads = items.filter((i) => i.item_type === 'stale_lead');
 
   const go = (id: string) => router.push(`/admin/people/${id}`);
@@ -99,6 +108,32 @@ export default function TodayPage() {
                       onClick={(e) => { e.stopPropagation(); setCompletingItem(i); }}
                     >
                       Mark done
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {checkInsToday.length > 0 && (
+            <>
+              <div className="crm-group-title">
+                Check-ins due <span className="count">{checkInsToday.length}</span>
+              </div>
+              <div className="crm-card">
+                {checkInsToday.map((i) => (
+                  <div key={i.item_id} className="crm-row" onClick={() => go(i.contact_id)}>
+                    <div className="grow">
+                      <div className="nm">{i.full_name}</div>
+                      <div className="meta">{i.label}</div>
+                    </div>
+                    <div className="right overdue">{daysLabel(i.days_overdue)}</div>
+                    <button
+                      className="action-btn primary"
+                      onClick={(e) => { e.stopPropagation(); doneCheckIn(i); }}
+                      disabled={doneCheckId === i.item_id}
+                    >
+                      {doneCheckId === i.item_id ? 'Saving…' : 'Mark done'}
                     </button>
                   </div>
                 ))}

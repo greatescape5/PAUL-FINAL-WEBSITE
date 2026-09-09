@@ -73,7 +73,7 @@ export interface RateChange {
 }
 
 export interface TodayItem {
-  item_type: 'rate_change' | 'follow_up' | 'stale_lead'
+  item_type: 'rate_change' | 'follow_up' | 'stale_lead' | 'check_in'
   item_id: string
   contact_id: string
   full_name: string
@@ -408,6 +408,7 @@ export interface CheckIn {
   kind: string
   done_on: string
   note: string | null
+  completed_at: string | null
   created_at: string
 }
 
@@ -429,6 +430,13 @@ export async function addCheckIn(contactId: string, kind: string, doneOn: string
 
 export async function deleteCheckIn(id: string) {
   const { error } = await supabase.from('check_ins').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Marks a scheduled check-in done so it drops off Today. */
+export async function completeCheckIn(id: string) {
+  const { error } = await supabase
+    .from('check_ins').update({ completed_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
 }
 

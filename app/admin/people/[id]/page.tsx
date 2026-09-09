@@ -8,7 +8,7 @@ import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
   setFollowUp, clearReview,
-  getCheckIns, addCheckIn, deleteCheckIn,
+  getCheckIns, addCheckIn, deleteCheckIn, completeCheckIn,
   getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
   type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp,
@@ -65,6 +65,7 @@ export default function ContactDetailPage() {
   const [addingCheckIn, setAddingCheckIn] = useState(false);
   const [completingFu, setCompletingFu] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [doneCheckId, setDoneCheckId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -106,6 +107,13 @@ export default function ContactDetailPage() {
     if (!confirm(`Delete this "${ci.kind}" check-in?`)) return;
     try { await deleteCheckIn(ci.id); await load(); }
     catch (e: any) { alert(e?.message ?? 'Could not delete'); }
+  }
+
+  async function markCheckInDone(ci: CheckIn) {
+    setDoneCheckId(ci.id);
+    try { await completeCheckIn(ci.id); await load(); }
+    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
+    finally { setDoneCheckId(null); }
   }
 
 
@@ -220,14 +228,27 @@ export default function ContactDetailPage() {
         {checkIns.length === 0 ? (
           <p style={{ color: 'var(--crm-ink-soft)', padding: '16px 18px' }}>No check-ins logged yet.</p>
         ) : (
-          checkIns.map((ci) => (
-            <div key={ci.id} className="crm-row" style={{ cursor: 'default' }}>
-              <span className="lc-badge" style={{ background: 'var(--blue-soft)' }}>{ci.kind}</span>
-              <div className="grow">{ci.note && <div className="meta">{ci.note}</div>}</div>
-              <div className="right">{fmtDay(ci.done_on)}</div>
-              <button className="action-btn" style={{ padding: '6px 10px' }} title="Delete check-in" onClick={() => removeCheckIn(ci)}>×</button>
-            </div>
-          ))
+          checkIns.map((ci) => {
+            const pending = ci.completed_at == null;
+            return (
+              <div key={ci.id} className="crm-row" style={{ cursor: 'default' }}>
+                <span className="lc-badge" style={{ background: pending ? 'var(--blue)' : 'var(--blue-soft)' }}>{ci.kind}</span>
+                <div className="grow">{ci.note && <div className="meta">{ci.note}</div>}</div>
+                <div className="right">{pending ? `Due ${fmtDay(ci.done_on)}` : fmtDay(ci.done_on)}</div>
+                {pending && (
+                  <button
+                    className="action-btn primary"
+                    style={{ padding: '6px 10px' }}
+                    onClick={() => markCheckInDone(ci)}
+                    disabled={doneCheckId === ci.id}
+                  >
+                    {doneCheckId === ci.id ? 'Saving…' : 'Mark done'}
+                  </button>
+                )}
+                <button className="action-btn" style={{ padding: '6px 10px' }} title="Delete check-in" onClick={() => removeCheckIn(ci)}>×</button>
+              </div>
+            );
+          })
         )}
       </div>
 
