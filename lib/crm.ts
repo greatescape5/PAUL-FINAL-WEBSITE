@@ -433,11 +433,33 @@ export async function deleteCheckIn(id: string) {
   if (error) throw error
 }
 
-/** Marks a scheduled check-in done so it drops off Today. */
-export async function completeCheckIn(id: string) {
+/**
+ * Marks a scheduled check-in done so it drops off Today. Optionally records a
+ * note about how it went and schedules the next check-in (same kind) in one step.
+ */
+export async function completeCheckIn(
+  id: string,
+  opts?: { note?: string; nextDate?: string | null },
+) {
+  const { data: row, error: readErr } = await supabase
+    .from('check_ins').select('contact_id,kind,note').eq('id', id).single()
+  if (readErr) throw readErr
+
+  const note = opts?.note?.trim()
+  const merged = note ? (row.note ? `${row.note}\n${note}` : note) : row.note
+
   const { error } = await supabase
-    .from('check_ins').update({ completed_at: new Date().toISOString() }).eq('id', id)
+    .from('check_ins')
+    .update({ completed_at: new Date().toISOString(), note: merged })
+    .eq('id', id)
   if (error) throw error
+
+  if (opts?.nextDate) {
+    const { error: insErr } = await supabase.from('check_ins').insert({
+      contact_id: row.contact_id, kind: row.kind, done_on: opts.nextDate, note: null,
+    })
+    if (insErr) throw insErr
+  }
 }
 
 // ---- Completed follow-up log (see migration 0006) ----

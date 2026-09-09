@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
 import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
+import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
   setFollowUp, clearReview,
-  getCheckIns, addCheckIn, deleteCheckIn, completeCheckIn,
+  getCheckIns, addCheckIn, deleteCheckIn,
   getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
   type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp,
@@ -65,7 +66,7 @@ export default function ContactDetailPage() {
   const [addingCheckIn, setAddingCheckIn] = useState(false);
   const [completingFu, setCompletingFu] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [doneCheckId, setDoneCheckId] = useState<string | null>(null);
+  const [completingCheckIn, setCompletingCheckIn] = useState<CheckIn | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -109,12 +110,6 @@ export default function ContactDetailPage() {
     catch (e: any) { alert(e?.message ?? 'Could not delete'); }
   }
 
-  async function markCheckInDone(ci: CheckIn) {
-    setDoneCheckId(ci.id);
-    try { await completeCheckIn(ci.id); await load(); }
-    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
-    finally { setDoneCheckId(null); }
-  }
 
 
   if (loading) return <CrmShell title="Contact"><div className="crm-loading">Loading…</div></CrmShell>;
@@ -239,10 +234,9 @@ export default function ContactDetailPage() {
                   <button
                     className="action-btn primary"
                     style={{ padding: '6px 10px' }}
-                    onClick={() => markCheckInDone(ci)}
-                    disabled={doneCheckId === ci.id}
+                    onClick={() => setCompletingCheckIn(ci)}
                   >
-                    {doneCheckId === ci.id ? 'Saving…' : 'Mark done'}
+                    Mark done
                   </button>
                 )}
                 <button className="action-btn" style={{ padding: '6px 10px' }} title="Delete check-in" onClick={() => removeCheckIn(ci)}>×</button>
@@ -306,6 +300,16 @@ export default function ContactDetailPage() {
           dueOn={c.follow_up_on}
           onClose={() => setCompletingFu(false)}
           onDone={() => { setCompletingFu(false); load(); }}
+        />
+      )}
+
+      {completingCheckIn && (
+        <CompleteCheckInSheet
+          checkInId={completingCheckIn.id}
+          kind={completingCheckIn.kind}
+          contactName={c.full_name}
+          onClose={() => setCompletingCheckIn(null)}
+          onDone={() => { setCompletingCheckIn(null); load(); }}
         />
       )}
     </CrmShell>

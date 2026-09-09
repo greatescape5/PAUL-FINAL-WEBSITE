@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
 import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
-import { getToday, applyRateChange, completeCheckIn, type TodayItem } from '@/lib/crm';
+import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
+import { getToday, applyRateChange, type TodayItem } from '@/lib/crm';
 
 function daysLabel(n: number) {
   if (n <= 0) return 'today';
@@ -18,7 +19,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null);
   const [completingItem, setCompletingItem] = useState<TodayItem | null>(null);
-  const [doneCheckId, setDoneCheckId] = useState<string | null>(null);
+  const [completingCheckIn, setCompletingCheckIn] = useState<TodayItem | null>(null);
 
   const load = useCallback(async () => {
     try { setItems(await getToday()); }
@@ -35,13 +36,6 @@ export default function TodayPage() {
     finally { setApplying(null); }
   }
 
-
-  async function doneCheckIn(item: TodayItem) {
-    setDoneCheckId(item.item_id);
-    try { await completeCheckIn(item.item_id); await load(); }
-    catch (e: any) { alert(e?.message ?? 'Could not complete'); }
-    finally { setDoneCheckId(null); }
-  }
 
   const rateChanges = items.filter((i) => i.item_type === 'rate_change');
   const followUps = items.filter((i) => i.item_type === 'follow_up');
@@ -130,10 +124,9 @@ export default function TodayPage() {
                     <div className="right overdue">{daysLabel(i.days_overdue)}</div>
                     <button
                       className="action-btn primary"
-                      onClick={(e) => { e.stopPropagation(); doneCheckIn(i); }}
-                      disabled={doneCheckId === i.item_id}
+                      onClick={(e) => { e.stopPropagation(); setCompletingCheckIn(i); }}
                     >
-                      {doneCheckId === i.item_id ? 'Saving…' : 'Mark done'}
+                      Mark done
                     </button>
                   </div>
                 ))}
@@ -169,6 +162,16 @@ export default function TodayPage() {
           dueOn={completingItem.due_on}
           onClose={() => setCompletingItem(null)}
           onDone={() => { setCompletingItem(null); load(); }}
+        />
+      )}
+
+      {completingCheckIn && (
+        <CompleteCheckInSheet
+          checkInId={completingCheckIn.item_id}
+          kind={completingCheckIn.label}
+          contactName={completingCheckIn.full_name}
+          onClose={() => setCompletingCheckIn(null)}
+          onDone={() => { setCompletingCheckIn(null); load(); }}
         />
       )}
     </CrmShell>
