@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
 import {
   getExpenses, createExpense, updateExpense, archiveExpense,
@@ -27,6 +28,14 @@ const fmtDate = (s: string) => parseDate(s).toLocaleDateString('en-US', { month:
 const REVENUE_COLOR = '#10b981';
 const EXPENSE_COLOR = '#b51f21';
 
+type TierRow = {
+  rate: number;
+  count: number;
+  total: number;
+  clients: { id: string; name: string }[];
+  tier?: Tier;
+};
+
 export default function PnlPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [billing, setBilling] = useState<BillingContact[]>([]);
@@ -36,6 +45,8 @@ export default function PnlPage() {
   const [sheet, setSheet] = useState<null | Expense | 'new'>(null);
   const [page, setPage] = useState(0);
   const [tab, setTab] = useState<'overview' | 'tiers' | 'expenses'>('overview');
+  const [viewingTier, setViewingTier] = useState<TierRow | null>(null);
+  const router = useRouter();
 
   const load = useCallback(async () => {
     try {
@@ -116,17 +127,21 @@ export default function PnlPage() {
   }, [expenses, billing]);
 
   // MRR broken down by price point (active clients only), highest first.
-  const byTier = useMemo(() => {
+  const byTier = useMemo<TierRow[]>(() => {
     const clients = billing.filter((c) => c.lifecycle === 'client' && c.monthly_rate != null);
-    const map = new Map<number, { count: number; total: number }>();
+    const map = new Map<number, { count: number; total: number; clients: { id: string; name: string }[] }>();
     for (const c of clients) {
       const r = Number(c.monthly_rate);
-      const e = map.get(r) ?? { count: 0, total: 0 };
-      e.count += 1; e.total += r;
+      const e = map.get(r) ?? { count: 0, total: 0, clients: [] };
+      e.count += 1; e.total += r; e.clients.push({ id: c.id, name: c.full_name });
       map.set(r, e);
     }
     return [...map.entries()]
-      .map(([rate, v]) => ({ rate, count: v.count, total: v.total, tier: tiers.find((t) => Number(t.price) === rate) }))
+      .map(([rate, v]) => ({
+        rate, count: v.count, total: v.total,
+        clients: v.clients.sort((a, b) => a.name.localeCompare(b.name)),
+        tier: tiers.find((t) => Number(t.price) === rate),
+      }))
       .sort((a, b) => b.rate - a.rate);
   }, [billing, tiers]);
   const totalClients = byTier.reduce((s, r) => s + r.count, 0);
@@ -223,8 +238,16 @@ export default function PnlPage() {
                       const realName = row.tier && !priceLike(row.tier.name, row.rate) ? row.tier.name : null;
                       return (
                         <tr key={row.rate}>
-                          <td>{realName ? <>{realName} <span style={{ color: 'var(--crm-ink-mute)', fontWeight: 400 }}>${row.rate}/mo</span></> : `$${row.rate}/mo`}</td>
-                          <td>{row.count}</td>
+                          <td>{realName ? <>{realName} <span style={{ color: 'var(--crm-ink-mute)', fontWeight: 400 }}>({money(row.rate)})</span></> : `${money(row.rate)}/mo`}</td>
+                          <td>
+                            <button
+                              onClick={() => setViewingTier(row)}
+                              title="View clients in this tier"
+                              style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '2px', fontFamily: 'inherit', fontSize: 'inherit', padding: 0 }}
+                            >
+                              {row.count}
+                            </button>
+                          </td>
                           <td style={{ color: REVENUE_COLOR, fontWeight: 700 }}>{money(row.total)}</td>
                         </tr>
                       );
@@ -286,6 +309,30 @@ export default function PnlPage() {
           onClose={() => setSheet(null)}
           onSaved={() => { setSheet(null); load(); }}
         />
+      )}
+
+      {viewingTier && (
+        <div className="sheet-backdrop" onClick={() => setViewingTier(null)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <h3>
+              {viewingTier.tier && !priceLike(viewingTier.tier.name, viewingTier.rate)
+                ? `${viewingTier.tier.name} (${money(viewingTier.rate)})`
+                : `${money(viewingTier.rate)}/mo`}
+            </h3>
+            <p className="hint">{viewingTier.count} active client{viewingTier.count === 1 ? '' : 's'} · {money(viewingTier.total)}/mo</p>
+            <div style={{ maxHeight: 360, overflowY: 'auto', margin: '0 -6px' }}>
+              {viewingTier.clients.map((cl) => (
+                <div key={cl.id} className="crm-row" onClick={() => router.push(`/admin/people/${cl.id}`)}>
+                  <div className="grow"><div className="nm">{cl.name}</div></div>
+                  <div className="right" style={{ color: 'var(--blue)' }}>View →</div>
+                </div>
+              ))}
+            </div>
+            <div className="sheet-actions">
+              <button className="ghost" onClick={() => setViewingTier(null)}>Close</button>
+            </div>
+          </div>
+        </div>
       )}
     </CrmShell>
   );

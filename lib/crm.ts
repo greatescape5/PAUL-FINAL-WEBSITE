@@ -394,6 +394,7 @@ export async function archiveExpense(id: string) {
 // MRR still comes from v_mrr (which excludes paused); this drives the trend.
 export interface BillingContact {
   id: string
+  full_name: string
   monthly_rate: number
   started_on: string | null
   cancelled_on: string | null
@@ -469,7 +470,7 @@ export async function completeFollowUp(
 export async function getBillingContacts() {
   const { data, error } = await supabase
     .from('v_contacts')
-    .select('id,monthly_rate,started_on,cancelled_on,lifecycle')
+    .select('id,full_name,monthly_rate,started_on,cancelled_on,lifecycle')
     .not('monthly_rate', 'is', null)
     .gt('monthly_rate', 0)
   if (error) throw error
