@@ -9,7 +9,7 @@ import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
   setFollowUp, clearReview,
-  getCheckIns, addCheckIn, deleteCheckIn,
+  getCheckIns, addCheckIn, deleteCheckIn, checkInNoteLabels,
   getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
   type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp,
@@ -225,10 +225,14 @@ export default function ContactDetailPage() {
         ) : (
           checkIns.map((ci) => {
             const pending = ci.completed_at == null;
+            const labels = checkInNoteLabels(ci.kind);
             return (
               <div key={ci.id} className="crm-row" style={{ cursor: 'default' }}>
                 <span className="lc-badge" style={{ background: pending ? 'var(--blue)' : 'var(--blue-soft)' }}>{ci.kind}</span>
-                <div className="grow">{ci.note && <div className="meta">{ci.note}</div>}</div>
+                <div className="grow">
+                  {ci.note && <div className="meta"><b>{labels.pre}:</b> {ci.note}</div>}
+                  {ci.post_note && <div className="meta"><b>{labels.post}:</b> {ci.post_note}</div>}
+                </div>
                 <div className="right">{pending ? `Due ${fmtDay(ci.done_on)}` : fmtDay(ci.done_on)}</div>
                 {pending && (
                   <button
@@ -332,6 +336,7 @@ function CheckInSheet({
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const isCustom = kind === '__custom';
+  const preLabel = checkInNoteLabels(isCustom ? custom : kind).pre;
 
   async function save() {
     const k = isCustom ? custom.trim() : kind;
@@ -358,7 +363,7 @@ function CheckInSheet({
         )}
         <div className="field"><label>Date</label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-        <div className="field"><label>Note (optional)</label>
+        <div className="field"><label>{preLabel} (optional)</label>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything to remember" /></div>
         <div className="sheet-actions">
           <button className="ghost" onClick={onClose}>Cancel</button>

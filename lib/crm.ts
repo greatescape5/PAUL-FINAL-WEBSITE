@@ -408,8 +408,16 @@ export interface CheckIn {
   kind: string
   done_on: string
   note: string | null
+  post_note: string | null
   completed_at: string | null
   created_at: string
+}
+
+/** Labels for a check-in's two note moments, tuned for face-call check-ins. */
+export function checkInNoteLabels(kind: string) {
+  return /face call/i.test(kind)
+    ? { pre: 'Pre-meeting notes', post: 'Post-meeting notes' }
+    : { pre: 'Notes', post: 'Outcome' }
 }
 
 export async function getCheckIns(contactId: string) {
@@ -442,15 +450,14 @@ export async function completeCheckIn(
   opts?: { note?: string; nextDate?: string | null },
 ) {
   const { data: row, error: readErr } = await supabase
-    .from('check_ins').select('contact_id,kind,note').eq('id', id).single()
+    .from('check_ins').select('contact_id,kind').eq('id', id).single()
   if (readErr) throw readErr
 
-  const note = opts?.note?.trim()
-  const merged = note ? (row.note ? `${row.note}\n${note}` : note) : row.note
+  const postNote = opts?.note?.trim() || null
 
   const { error } = await supabase
     .from('check_ins')
-    .update({ completed_at: new Date().toISOString(), note: merged })
+    .update({ completed_at: new Date().toISOString(), post_note: postNote })
     .eq('id', id)
   if (error) throw error
 

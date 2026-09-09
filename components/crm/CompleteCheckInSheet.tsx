@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { completeCheckIn } from '@/lib/crm';
+import { completeCheckIn, checkInNoteLabels } from '@/lib/crm';
 
 // Marks a scheduled check-in done and optionally schedules the next one in the
 // same step. Shared by the Today screen and the contact detail page.
@@ -17,6 +17,7 @@ export default function CompleteCheckInSheet({
   const [next, setNext] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const labels = checkInNoteLabels(kind ?? '');
 
   async function complete() {
     setBusy(true);
@@ -39,7 +40,7 @@ export default function CompleteCheckInSheet({
           <input type="date" value={next} onChange={(e) => setNext(e.target.value)} />
         </div>
         <div className="field">
-          <label>Note (optional)</label>
+          <label>{labels.post} (optional)</label>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="How did it go / what's next" />
         </div>
         <div className="sheet-actions">
