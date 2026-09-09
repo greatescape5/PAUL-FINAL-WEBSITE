@@ -6,7 +6,8 @@ import {
   getStages, createStage, updateStage, archiveStage,
   getTiers, createTier, updateTier, archiveTier,
   getPossibleDuplicates, mergeContacts,
-  type Stage, type Tier, type PossibleDuplicate,
+  getNewsletterOffer, saveNewsletterOffer,
+  type Stage, type Tier, type PossibleDuplicate, type NewsletterOffer,
 } from '@/lib/crm';
 
 export default function SettingsPage() {
@@ -18,7 +19,10 @@ export default function SettingsPage() {
   const [newTierName, setNewTierName] = useState('');
   const [newTierPrice, setNewTierPrice] = useState('');
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<'tiers' | 'stages' | 'duplicates'>('tiers');
+  const [tab, setTab] = useState<'tiers' | 'stages' | 'cta' | 'duplicates'>('tiers');
+  const [offer, setOffer] = useState<NewsletterOffer | null>(null);
+  const [savingOffer, setSavingOffer] = useState(false);
+  const [offerSaved, setOfferSaved] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -35,7 +39,33 @@ export default function SettingsPage() {
     try { setTiers(await getTiers()); } catch { setTiers([]); }
   }, []);
 
-  useEffect(() => { load(); loadTiers(); }, [load, loadTiers]);
+  const loadOffer = useCallback(async () => {
+    try { setOffer(await getNewsletterOffer()); } catch { setOffer(null); }
+  }, []);
+
+  useEffect(() => { load(); loadTiers(); loadOffer(); }, [load, loadTiers, loadOffer]);
+
+  // ---- Newsletter CTA offer ----
+  function setOfferField<K extends keyof NewsletterOffer>(key: K, value: NewsletterOffer[K]) {
+    setOffer((o) => (o ? { ...o, [key]: value } : o));
+    setOfferSaved(false);
+  }
+  async function saveOffer() {
+    if (!offer) return;
+    setSavingOffer(true);
+    try {
+      await saveNewsletterOffer({
+        enabled: offer.enabled,
+        name: offer.name.trim(),
+        price_display: offer.price_display.trim(),
+        description: offer.description.trim(),
+        button_label: offer.button_label.trim() || 'Sign up',
+        signup_url: offer.signup_url.trim(),
+      });
+      setOfferSaved(true);
+    } catch (e: any) { alert(e?.message ?? 'Could not save'); }
+    finally { setSavingOffer(false); }
+  }
 
   // ---- Stages ----
   async function saveStageName(s: Stage, name: string) {
@@ -108,6 +138,7 @@ export default function SettingsPage() {
             <div className="seg">
               <button className={tab === 'tiers' ? 'active' : ''} onClick={() => setTab('tiers')}>Pricing tiers</button>
               <button className={tab === 'stages' ? 'active' : ''} onClick={() => setTab('stages')}>Pipeline stages</button>
+              <button className={tab === 'cta' ? 'active' : ''} onClick={() => setTab('cta')}>Sign-up CTA</button>
               <button className={tab === 'duplicates' ? 'active' : ''} onClick={() => setTab('duplicates')}>
                 Duplicates{dupes.length > 0 ? ` (${dupes.length})` : ''}
               </button>
@@ -169,6 +200,56 @@ export default function SettingsPage() {
               <input className="crm-search" placeholder="New stage name…" value={newStage} onChange={(e) => setNewStage(e.target.value)} style={{ maxWidth: 320 }} />
               <button className="action-btn primary" type="submit">Add stage</button>
             </form>
+          </div>
+          )}
+
+          {/* ---- Newsletter sign-up CTA ---- */}
+          {tab === 'cta' && (
+          <div className="crm-card" style={{ padding: '18px 22px', maxWidth: 640 }}>
+            {!offer ? (
+              <p style={{ color: 'var(--crm-ink-soft)', margin: 0 }}>
+                The CTA offer isn&rsquo;t set up yet. Run migration 0012, then reload.
+              </p>
+            ) : (
+              <>
+                <p style={{ color: 'var(--crm-ink-soft)', marginTop: 0 }}>
+                  Configure the promotional offer the client can drop into a newsletter. When enabled,
+                  a &ldquo;Add the sign-up CTA&rdquo; box appears in the composer.
+                </p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 16px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={offer.enabled} onChange={(e) => setOfferField('enabled', e.target.checked)} />
+                  <span>Offer this CTA (make it available in the composer)</span>
+                </label>
+
+                <div className="field">
+                  <label>Package name</label>
+                  <input className="crm-search" value={offer.name} onChange={(e) => setOfferField('name', e.target.value)} placeholder="e.g. Kickstart" />
+                </div>
+                <div className="field">
+                  <label>Price (display text)</label>
+                  <input className="crm-search" value={offer.price_display} onChange={(e) => setOfferField('price_display', e.target.value)} placeholder="e.g. $79.99 for two months" />
+                </div>
+                <div className="field">
+                  <label>Description</label>
+                  <textarea rows={3} className="crm-search" value={offer.description} onChange={(e) => setOfferField('description', e.target.value)} placeholder="A short pitch for the offer." style={{ resize: 'vertical' }} />
+                </div>
+                <div className="field">
+                  <label>Button label</label>
+                  <input className="crm-search" value={offer.button_label} onChange={(e) => setOfferField('button_label', e.target.value)} placeholder="Sign up" />
+                </div>
+                <div className="field">
+                  <label>Sign-up link (PT Distinction URL)</label>
+                  <input className="crm-search" value={offer.signup_url} onChange={(e) => setOfferField('signup_url', e.target.value)} placeholder="https://…  (blank routes to the contact page)" />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                  <button className="action-btn primary" onClick={saveOffer} disabled={savingOffer}>
+                    {savingOffer ? 'Saving…' : 'Save CTA'}
+                  </button>
+                  {offerSaved && <span style={{ color: '#10b981', fontSize: '0.9rem' }}>Saved ✓</span>}
+                </div>
+              </>
+            )}
           </div>
           )}
 

@@ -206,11 +206,29 @@ export function welcomeEmail(o: { unsubscribeUrl: string }) {
   };
 }
 
+// A branded sign-up CTA box, appended to a newsletter when enabled.
+export function offerCtaBlock(o: {
+  name: string; priceDisplay: string; description: string; buttonLabel: string; signupUrl: string;
+}): string {
+  const href = o.signupUrl || absoluteUrl('/contact');
+  return `
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:26px 0 6px;">
+    <tr><td bgcolor="#eef3f9" style="background-color:#eef3f9; border:1px solid #d7e1ee; border-radius:14px; padding:26px 28px;">
+      ${o.name ? `<p style="margin:0 0 6px 0; font-family:${SANS}; font-size:12px; letter-spacing:1.2px; text-transform:uppercase; font-weight:700; color:#5580ac;">Special offer</p>
+      <p style="margin:0 0 6px 0; font-family:${SANS}; font-size:22px; font-weight:700; color:#26313d;">${esc(o.name)}</p>` : ''}
+      ${o.priceDisplay ? `<p style="margin:0 0 10px 0; font-family:${SANS}; font-size:17px; font-weight:600; color:#b51f21;">${esc(o.priceDisplay)}</p>` : ''}
+      ${o.description ? `<p style="margin:0 0 18px 0; font-family:${SANS}; font-size:15px; line-height:1.6; color:#4c5763;">${esc(o.description)}</p>` : ''}
+      ${redButton(href, o.buttonLabel || 'Sign up')}
+    </td></tr>
+  </table>`;
+}
+
 // ---------------------------------------------------------------
 // 4. The monthly newsletter itself (client-authored body)
 // ---------------------------------------------------------------
 // `contentHtml` is the sanitized, style-inlined body from the CRM composer.
-export function newsletterEmail(o: { subject: string; contentHtml: string; unsubscribeUrl: string }) {
+// `offerHtml` is an optional CTA block appended after the body.
+export function newsletterEmail(o: { subject: string; contentHtml: string; unsubscribeUrl: string; offerHtml?: string }) {
   const contentStyles = `
     .nl-content { font-family:${SANS}; font-size:16px; line-height:1.7; color:#26313d; }
     .nl-content h1 { font-size:26px; line-height:1.3; font-weight:700; margin:20px 0 10px; color:#26313d; }
@@ -227,6 +245,7 @@ export function newsletterEmail(o: { subject: string; contentHtml: string; unsub
     <div class="nl-content" style="font-family:${SANS}; font-size:16px; line-height:1.7; color:#26313d;">
       ${o.contentHtml}
     </div>
+    ${o.offerHtml ?? ''}
   </td></tr>`;
 
   return {

@@ -533,6 +533,34 @@ export async function getBroadcasts() {
   return data as Broadcast[]
 }
 
+// ---- Configurable newsletter sign-up CTA (see migration 0012) ----
+export interface NewsletterOffer {
+  id: number
+  enabled: boolean
+  name: string
+  price_display: string
+  description: string
+  button_label: string
+  signup_url: string
+}
+
+export async function getNewsletterOffer() {
+  const { data, error } = await supabase
+    .from('newsletter_offer')
+    .select('id,enabled,name,price_display,description,button_label,signup_url')
+    .eq('id', 1).maybeSingle()
+  if (error) throw error
+  return data as NewsletterOffer | null
+}
+
+export async function saveNewsletterOffer(patch: Partial<Omit<NewsletterOffer, 'id'>>) {
+  const { error } = await supabase
+    .from('newsletter_offer')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('id', 1)
+  if (error) throw error
+}
+
 /** Uploads an image to the public `newsletter` bucket, returns its public URL. */
 export async function uploadNewsletterImage(file: File) {
   const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
@@ -546,13 +574,13 @@ export async function uploadNewsletterImage(file: File) {
 }
 
 /** Sends the composed newsletter to all subscribed contacts (via the server). */
-export async function sendNewsletter(subject: string, html: string): Promise<{ sent: number }> {
+export async function sendNewsletter(subject: string, html: string, includeCta = false): Promise<{ sent: number }> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Your session expired — sign in again.')
   const res = await fetch('/api/newsletter/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({ subject, html }),
+    body: JSON.stringify({ subject, html, includeCta }),
   })
   const out = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(out?.error || 'Send failed')

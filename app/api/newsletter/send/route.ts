@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { newsletterEmail } from '@/lib/emails';
+import { newsletterEmail, offerCtaBlock } from '@/lib/emails';
 import { absoluteUrl } from '@/lib/site';
 
 export const runtime = 'nodejs';
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Email sending is not configured (missing Resend key or from-address).' }, { status: 500 });
   }
 
-  let body: { subject?: string; html?: string };
+  let body: { subject?: string; html?: string; includeCta?: boolean };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
@@ -74,6 +74,19 @@ export async function POST(req: Request) {
   }
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
+
+  // Optional sign-up CTA block, appended after the body.
+  let offerHtml = '';
+  if (body.includeCta) {
+    const { data: offer } = await admin
+      .from('newsletter_offer').select('*').eq('id', 1).maybeSingle();
+    if (offer?.enabled) {
+      offerHtml = offerCtaBlock({
+        name: offer.name, priceDisplay: offer.price_display, description: offer.description,
+        buttonLabel: offer.button_label, signupUrl: offer.signup_url,
+      });
+    }
+  }
 
   const { data: subs, error: subErr } = await admin
     .from('subscribers').select('email,unsub_token')
@@ -99,6 +112,7 @@ export async function POST(req: Request) {
         const mail = newsletterEmail({
           subject,
           contentHtml: cleaned,
+          offerHtml,
           unsubscribeUrl: absoluteUrl(`/unsubscribe?token=${r.unsub_token}`),
         });
         return { from: fromEmail, to: r.email as string, subject: mail.subject, html: mail.html };

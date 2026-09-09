@@ -280,3 +280,16 @@
   break-inside: avoid; overflow-wrap: anywhere;
 }
 @media (max-width: 640px) { .nl-recipients { columns: 1; } }
+
+/* Base field styling (settings panels that aren't inside a sheet/composer). */
+.field { margin-top: 14px; }
+.field > label { display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; color: var(--crm-ink); }
+
+/* ---------- Newsletter CTA toggle + preview (composer) ---------- */
+.nl-cta-toggle { margin: 16px 0 4px; padding: 14px 16px; background: #f4f6f9; border: 1px solid var(--crm-border); border-radius: 10px; }
+.nl-cta-preview { margin-top: 12px; padding: 16px 18px; background: #eef3f9; border: 1px solid #d7e1ee; border-radius: 12px; }
+.nl-cta-eyebrow { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; color: #5580ac; margin-bottom: 4px; }
+.nl-cta-name { font-size: 1.2rem; font-weight: 700; color: var(--crm-ink); }
+.nl-cta-price { font-size: 1rem; font-weight: 600; color: var(--red); margin-top: 2px; }
+.nl-cta-desc { font-size: 0.92rem; color: var(--crm-ink-soft); margin-top: 6px; line-height: 1.5; }
+.nl-cta-btn { display: inline-block; margin-top: 12px; background: var(--red); color: #fff; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }

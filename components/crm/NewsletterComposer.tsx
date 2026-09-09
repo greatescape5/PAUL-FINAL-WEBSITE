@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { sendNewsletter, uploadNewsletterImage } from '@/lib/crm';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { sendNewsletter, uploadNewsletterImage, getNewsletterOffer, type NewsletterOffer } from '@/lib/crm';
 
 // Lightweight WYSIWYG for the monthly newsletter. Uses execCommand (deprecated
 // but universally supported) — plenty for a single-author internal tool. The
@@ -18,6 +19,17 @@ export default function NewsletterComposer({
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
+  const [offer, setOffer] = useState<NewsletterOffer | null>(null);
+  const [includeCta, setIncludeCta] = useState(false);
+
+  useEffect(() => {
+    getNewsletterOffer().then((o) => {
+      setOffer(o);
+      if (o?.enabled) setIncludeCta(true);
+    }).catch(() => {});
+  }, []);
+
+  const offerReady = !!offer?.enabled;
 
   function exec(cmd: string, value?: string) {
     editorRef.current?.focus();
@@ -56,7 +68,7 @@ export default function NewsletterComposer({
     setSending(true);
     setErr('');
     try {
-      const { sent } = await sendNewsletter(subject.trim(), html);
+      const { sent } = await sendNewsletter(subject.trim(), html, offerReady && includeCta);
       setSubject('');
       if (editorRef.current) editorRef.current.innerHTML = '';
       onSent(sent);
@@ -98,6 +110,30 @@ export default function NewsletterComposer({
         </div>
         <div ref={editorRef} className="nl-editor nl-content" contentEditable suppressContentEditableWarning />
         <p className="nl-hint">Wrapped in the Flow Motion template (logo, brand colors, unsubscribe link) when it sends.</p>
+      </div>
+
+      <div className="nl-cta-toggle">
+        {offerReady ? (
+          <>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={includeCta} onChange={(e) => setIncludeCta(e.target.checked)} />
+              <span>Add the sign-up CTA to the bottom</span>
+            </label>
+            {includeCta && (
+              <div className="nl-cta-preview">
+                <div className="nl-cta-eyebrow">Special offer</div>
+                {offer?.name && <div className="nl-cta-name">{offer.name}</div>}
+                {offer?.price_display && <div className="nl-cta-price">{offer.price_display}</div>}
+                {offer?.description && <div className="nl-cta-desc">{offer.description}</div>}
+                <span className="nl-cta-btn">{offer?.button_label || 'Sign up'}</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="nl-hint" style={{ margin: 0 }}>
+            No sign-up CTA is set up yet. Configure one in <Link href="/admin/settings">Settings → Sign-up CTA</Link> to offer it here.
+          </p>
+        )}
       </div>
 
       {err && <p className="nl-composer-err">{err}</p>}
