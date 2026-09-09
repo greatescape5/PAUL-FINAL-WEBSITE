@@ -27,7 +27,7 @@ function priceLike(name: string, rate: number) {
 
 // Remember the People view (tab, sort, grouping, search) across navigation.
 const VIEW_KEY = 'crm.people.view';
-type SavedView = { seg?: Lifecycle; sort?: 'name' | 'tier'; q?: string; groupByStage?: boolean };
+type SavedView = { seg?: Lifecycle; sort?: 'name' | 'tier'; q?: string; groupByStage?: boolean; stageFilter?: string };
 function readView(): SavedView {
   if (typeof window === 'undefined') return {};
   try { return JSON.parse(sessionStorage.getItem(VIEW_KEY) || '{}'); } catch { return {}; }
@@ -44,6 +44,7 @@ export default function PeoplePage() {
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [creating, setCreating] = useState(false);
   const [sort, setSort] = useState<'name' | 'tier'>(() => readView().sort ?? 'tier');
+  const [stageFilter, setStageFilter] = useState<string>(() => readView().stageFilter ?? 'All');
 
   const load = useCallback(async (lc: Lifecycle) => {
     setLoading(true);
@@ -58,18 +59,24 @@ export default function PeoplePage() {
 
   // Persist the view so returning from a contact restores the same tab/sort.
   useEffect(() => {
-    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ seg, sort, q, groupByStage })); } catch { /* ignore */ }
-  }, [seg, sort, q, groupByStage]);
+    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ seg, sort, q, groupByStage, stageFilter })); } catch { /* ignore */ }
+  }, [seg, sort, q, groupByStage, stageFilter]);
 
   const filtered = useMemo(() => {
+    let list = rows;
     const needle = q.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((c) =>
-      c.full_name.toLowerCase().includes(needle) ||
-      (c.email ?? '').toLowerCase().includes(needle) ||
-      (c.phone ?? '').includes(needle)
-    );
-  }, [rows, q]);
+    if (needle) {
+      list = list.filter((c) =>
+        c.full_name.toLowerCase().includes(needle) ||
+        (c.email ?? '').toLowerCase().includes(needle) ||
+        (c.phone ?? '').includes(needle)
+      );
+    }
+    if (seg === 'lead' && stageFilter !== 'All') {
+      list = list.filter((c) => (c.stage_name ?? 'No stage') === stageFilter);
+    }
+    return list;
+  }, [rows, q, seg, stageFilter]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -90,7 +97,7 @@ export default function PeoplePage() {
   }, [filtered, sort]);
 
   const grouped = useMemo(() => {
-    if (seg !== 'lead' || !groupByStage) return null;
+    if (seg !== 'lead' || !groupByStage || stageFilter !== 'All') return null;
     const map = new Map<string, Contact[]>();
     for (const c of sorted) {
       const key = c.stage_name ?? 'No stage';
@@ -98,7 +105,7 @@ export default function PeoplePage() {
       map.get(key)!.push(c);
     }
     return [...map.entries()];
-  }, [sorted, seg, groupByStage]);
+  }, [sorted, seg, groupByStage, stageFilter]);
 
   // When sorting by tier, break the list into price-point groups (each with a
   // heading: the tier's package name + the price in gray).
@@ -150,7 +157,7 @@ export default function PeoplePage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        {seg === 'lead' && (
+        {seg === 'lead' && stageFilter === 'All' && (
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', color: 'var(--crm-ink-soft)' }}>
             <input type="checkbox" checked={groupByStage} onChange={(e) => setGroupByStage(e.target.checked)} />
             Group by stage
@@ -165,6 +172,17 @@ export default function PeoplePage() {
         </label>
         <button className="action-btn primary" onClick={() => setCreating(true)}>+ New contact</button>
       </div>
+
+      {seg === 'lead' && stages.length > 0 && (
+        <div className="seg" style={{ flexWrap: 'wrap', marginBottom: 16 }}>
+          <button className={stageFilter === 'All' ? 'active' : ''} onClick={() => setStageFilter('All')}>All</button>
+          {stages.map((s) => (
+            <button key={s.id} className={stageFilter === s.name ? 'active' : ''} onClick={() => setStageFilter(s.name)}>
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="crm-loading">Loading…</div>

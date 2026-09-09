@@ -8,11 +8,11 @@ import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
-  setFollowUp, clearReview,
+  setFollowUp, clearReview, setStage, getStages,
   getCheckIns, addCheckIn, deleteCheckIn, checkInNoteLabels,
   getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
-  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp,
+  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp, type Stage,
 } from '@/lib/crm';
 
 // Common accountability check-in types (matches how the legacy sheet was used).
@@ -67,6 +67,7 @@ export default function ContactDetailPage() {
   const [completingFu, setCompletingFu] = useState(false);
   const [busy, setBusy] = useState(false);
   const [completingCheckIn, setCompletingCheckIn] = useState<CheckIn | null>(null);
+  const [stages, setStages] = useState<Stage[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -86,6 +87,7 @@ export default function ContactDetailPage() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { getStages().then(setStages).catch(() => {}); }, []);
 
   const undoable = activities.find(
     (a) => !a.undone_at && ['lifecycle_change', 'stage_change', 'rate_change'].includes(a.kind),
@@ -278,6 +280,7 @@ export default function ContactDetailPage() {
         <ActionSheet
           kind={sheet}
           contact={c}
+          stages={stages}
           busy={busy}
           onClose={() => setSheet(null)}
           onDone={async (fn) => {
@@ -378,10 +381,11 @@ function CheckInSheet({
 // Action sheets
 // ---------------------------------------------------------------------------
 function ActionSheet({
-  kind, contact, busy, onClose, onDone,
+  kind, contact, stages, busy, onClose, onDone,
 }: {
   kind: Exclude<Sheet, null>;
   contact: Contact;
+  stages: Stage[];
   busy: boolean;
   onClose: () => void;
   onDone: (fn: () => Promise<unknown>) => void;
@@ -394,6 +398,18 @@ function ActionSheet({
   const [rate, setRate] = useState('');
   const [effective, setEffective] = useState(today());
   const [reason, setReason] = useState('');
+  const [stageId, setStageId] = useState<string>(c.stage_id ?? '');
+
+  // When switching to "lead", default the stage picker to the pipeline's first stage.
+  useEffect(() => {
+    if (lifecycle === 'lead' && !stageId) {
+      setStageId(stages.find((s) => s.is_default)?.id ?? stages[0]?.id ?? '');
+    }
+  }, [lifecycle, stages, stageId]);
+
+  const lifeChanged = lifecycle !== c.lifecycle;
+  const stageChanged = lifecycle === 'lead' && !!stageId && stageId !== (c.stage_id ?? '');
+  const canSaveStatus = lifeChanged || stageChanged;
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -410,6 +426,14 @@ function ActionSheet({
                 </button>
               ))}
             </div>
+            {lifecycle === 'lead' && stages.length > 0 && (
+              <div className="field">
+                <label>Sales stage</label>
+                <select value={stageId} onChange={(e) => setStageId(e.target.value)}>
+                  {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+            )}
             {lifecycle === 'paused' && (
               <div className="field">
                 <label>Expected return date</label>
@@ -422,8 +446,11 @@ function ActionSheet({
             </div>
             <div className="sheet-actions">
               <button className="ghost" onClick={onClose}>Cancel</button>
-              <button className="go" disabled={busy || lifecycle === c.lifecycle}
-                onClick={() => onDone(() => setLifecycle(c.id, lifecycle, { note: note || undefined, expectedReturn: expectedReturn || undefined }))}>
+              <button className="go" disabled={busy || !canSaveStatus}
+                onClick={() => onDone(async () => {
+                  if (lifeChanged) await setLifecycle(c.id, lifecycle, { note: note || undefined, expectedReturn: expectedReturn || undefined });
+                  if (stageChanged) await setStage(c.id, stageId, lifeChanged ? undefined : (note || undefined));
+                })}>
                 Save
               </button>
             </div>
