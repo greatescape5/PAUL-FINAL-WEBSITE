@@ -27,10 +27,14 @@ function priceLike(name: string, rate: number) {
 function tierLabel(t: Tier) {
   return priceLike(t.name, t.price) ? `${money(t.price)}/mo` : `${t.name} — ${money(t.price)}/mo`;
 }
+// Short label for the filter buttons: package name if it has one, else the price.
+function tierShort(t: Tier) {
+  return priceLike(t.name, t.price) ? money(t.price) : t.name;
+}
 
 // Remember the People view (tab, sort, grouping, search) across navigation.
 const VIEW_KEY = 'crm.people.view';
-type SavedView = { seg?: Lifecycle; sort?: 'name' | 'tier'; q?: string; groupByStage?: boolean; stageFilter?: string };
+type SavedView = { seg?: Lifecycle; sort?: 'name' | 'tier'; q?: string; groupByStage?: boolean; stageFilter?: string; tierFilter?: string };
 function readView(): SavedView {
   if (typeof window === 'undefined') return {};
   try { return JSON.parse(sessionStorage.getItem(VIEW_KEY) || '{}'); } catch { return {}; }
@@ -48,6 +52,7 @@ export default function PeoplePage() {
   const [creating, setCreating] = useState(false);
   const [sort, setSort] = useState<'name' | 'tier'>(() => readView().sort ?? 'tier');
   const [stageFilter, setStageFilter] = useState<string>(() => readView().stageFilter ?? 'All');
+  const [tierFilter, setTierFilter] = useState<string>(() => readView().tierFilter ?? 'All');
 
   const load = useCallback(async (lc: Lifecycle) => {
     setLoading(true);
@@ -62,8 +67,8 @@ export default function PeoplePage() {
 
   // Persist the view so returning from a contact restores the same tab/sort.
   useEffect(() => {
-    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ seg, sort, q, groupByStage, stageFilter })); } catch { /* ignore */ }
-  }, [seg, sort, q, groupByStage, stageFilter]);
+    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ seg, sort, q, groupByStage, stageFilter, tierFilter })); } catch { /* ignore */ }
+  }, [seg, sort, q, groupByStage, stageFilter, tierFilter]);
 
   const filtered = useMemo(() => {
     let list = rows;
@@ -78,8 +83,12 @@ export default function PeoplePage() {
     if (seg === 'lead' && stageFilter !== 'All') {
       list = list.filter((c) => (c.stage_name ?? 'No stage') === stageFilter);
     }
+    if (seg === 'client' && tierFilter !== 'All') {
+      const price = tiers.find((t) => t.id === tierFilter)?.price ?? null;
+      list = list.filter((c) => c.monthly_rate != null && Number(c.monthly_rate) === price);
+    }
     return list;
-  }, [rows, q, seg, stageFilter]);
+  }, [rows, q, seg, stageFilter, tierFilter, tiers]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -182,6 +191,17 @@ export default function PeoplePage() {
           {stages.map((s) => (
             <button key={s.id} className={stageFilter === s.name ? 'active' : ''} onClick={() => setStageFilter(s.name)}>
               {s.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {seg === 'client' && tiers.length > 0 && (
+        <div className="seg" style={{ flexWrap: 'wrap', marginBottom: 16 }}>
+          <button className={tierFilter === 'All' ? 'active' : ''} onClick={() => setTierFilter('All')}>All</button>
+          {tiers.map((t) => (
+            <button key={t.id} className={tierFilter === t.id ? 'active' : ''} onClick={() => setTierFilter(t.id)}>
+              {tierShort(t)}
             </button>
           ))}
         </div>
