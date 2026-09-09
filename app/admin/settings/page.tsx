@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [newTierName, setNewTierName] = useState('');
   const [newTierPrice, setNewTierPrice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<'tiers' | 'stages' | 'duplicates'>('tiers');
 
   const load = useCallback(async () => {
     try {
@@ -103,8 +104,18 @@ export default function SettingsPage() {
         <div className="crm-loading">Loading…</div>
       ) : (
         <>
+          <div className="crm-toolbar">
+            <div className="seg">
+              <button className={tab === 'tiers' ? 'active' : ''} onClick={() => setTab('tiers')}>Pricing tiers</button>
+              <button className={tab === 'stages' ? 'active' : ''} onClick={() => setTab('stages')}>Pipeline stages</button>
+              <button className={tab === 'duplicates' ? 'active' : ''} onClick={() => setTab('duplicates')}>
+                Duplicates{dupes.length > 0 ? ` (${dupes.length})` : ''}
+              </button>
+            </div>
+          </div>
+
           {/* ---- Pricing tiers ---- */}
-          <div className="crm-group-title">Pricing tiers</div>
+          {tab === 'tiers' && (
           <div className="crm-card" style={{ padding: '8px 18px' }}>
             {tiers.length === 0 && (
               <p style={{ color: 'var(--crm-ink-soft)', padding: '12px 0 4px' }}>
@@ -134,9 +145,10 @@ export default function SettingsPage() {
               <button className="action-btn primary" type="submit">Add tier</button>
             </form>
           </div>
+          )}
 
           {/* ---- Pipeline stages ---- */}
-          <div className="crm-group-title" style={{ marginTop: 34 }}>Pipeline stages</div>
+          {tab === 'stages' && (
           <div className="crm-card" style={{ padding: '8px 18px' }}>
             {stages.map((s, i) => (
               <div key={s.id} className="crm-row" style={{ cursor: 'default' }}>
@@ -158,11 +170,10 @@ export default function SettingsPage() {
               <button className="action-btn primary" type="submit">Add stage</button>
             </form>
           </div>
+          )}
 
           {/* ---- Duplicates ---- */}
-          <div className="crm-group-title" style={{ marginTop: 34 }}>
-            Possible duplicates <span className="count">{dupes.length}</span>
-          </div>
+          {tab === 'duplicates' && (
           <div className="crm-card">
             {dupes.length === 0 ? (
               <p style={{ color: 'var(--crm-ink-soft)', padding: '18px' }}>No duplicates found. 🎉</p>
@@ -178,6 +189,7 @@ export default function SettingsPage() {
               ))
             )}
           </div>
+          )}
         </>
       )}
     </CrmShell>
