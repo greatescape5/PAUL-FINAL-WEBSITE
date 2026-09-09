@@ -24,6 +24,9 @@ function priceLike(name: string, rate: number) {
   const n = name.trim().replace(/\/mo$/i, '').replace(/[$,\s]/g, '');
   return n === String(rate) || Number(n) === rate;
 }
+function tierLabel(t: Tier) {
+  return priceLike(t.name, t.price) ? `${money(t.price)}/mo` : `${t.name} — ${money(t.price)}/mo`;
+}
 
 // Remember the People view (tab, sort, grouping, search) across navigation.
 const VIEW_KEY = 'crm.people.view';
@@ -220,6 +223,7 @@ export default function PeoplePage() {
       {creating && (
         <CreateSheet
           stages={stages}
+          tiers={tiers}
           defaultLifecycle={seg}
           onClose={() => setCreating(false)}
           onCreated={(id) => router.push(`/admin/people/${id}`)}
@@ -230,9 +234,10 @@ export default function PeoplePage() {
 }
 
 function CreateSheet({
-  stages, defaultLifecycle, onClose, onCreated,
+  stages, tiers, defaultLifecycle, onClose, onCreated,
 }: {
   stages: Stage[];
+  tiers: Tier[];
   defaultLifecycle: Lifecycle;
   onClose: () => void;
   onCreated: (id: string) => void;
@@ -243,7 +248,12 @@ function CreateSheet({
   const [lifecycle, setLifecycle] = useState<Lifecycle>(defaultLifecycle);
   const [stageId, setStageId] = useState('');
   const [rate, setRate] = useState('');
+  const [rateTierId, setRateTierId] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const isCustomRate = rateTierId === '__custom';
+  const selectedTier = tiers.find((t) => t.id === rateTierId);
+  const newRate = isCustomRate ? (rate ? Number(rate) : null) : (selectedTier?.price ?? null);
 
   useEffect(() => {
     if (!stageId) setStageId(stages.find((s) => s.is_default)?.id ?? stages[0]?.id ?? '');
@@ -259,7 +269,7 @@ function CreateSheet({
         phone: phone.trim() || null,
         lifecycle,
         stage_id: lifecycle === 'lead' ? (stageId || null) : null,
-        monthly_rate: (lifecycle === 'client' || lifecycle === 'paused') && rate ? Number(rate) : null,
+        monthly_rate: (lifecycle === 'client' || lifecycle === 'paused') ? newRate : null,
       });
       onCreated(id);
     } catch (e: any) {
@@ -292,8 +302,19 @@ function CreateSheet({
           </div>
         )}
         {(lifecycle === 'client' || lifecycle === 'paused') && (
-          <div className="field"><label>Monthly rate ($)</label>
-            <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 199" /></div>
+          <>
+            <div className="field"><label>Package</label>
+              <select value={rateTierId} onChange={(e) => setRateTierId(e.target.value)}>
+                <option value="">No rate yet</option>
+                {tiers.map((t) => <option key={t.id} value={t.id}>{tierLabel(t)}</option>)}
+                <option value="__custom">Custom amount…</option>
+              </select>
+            </div>
+            {isCustomRate && (
+              <div className="field"><label>Custom monthly rate ($)</label>
+                <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 199" autoFocus /></div>
+            )}
+          </>
         )}
         <div className="sheet-actions">
           <button className="ghost" onClick={onClose}>Cancel</button>
