@@ -8,11 +8,11 @@ import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
-  setFollowUp, clearReview, setStage, getStages,
+  setFollowUp, clearReview, setStage, getStages, getTiers,
   getCheckIns, addCheckIn, deleteCheckIn, checkInNoteLabels,
   getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
-  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp, type Stage,
+  type Contact, type Activity, type RateChange, type Lifecycle, type CheckIn, type FollowUp, type Stage, type Tier,
 } from '@/lib/crm';
 
 // Common accountability check-in types (matches how the legacy sheet was used).
@@ -20,6 +20,16 @@ const CHECKIN_KINDS = ['Face call check-in', 'Thank you', 'Text check-in', 'Prog
 
 const money = (n: number | null | undefined) => (n == null ? '—' : `$${Math.round(n).toLocaleString()}`);
 const today = () => new Date().toISOString().slice(0, 10);
+
+// A tier name that's essentially just its price (e.g. seeded "$299") has no
+// real package name — show the price alone in that case.
+function priceLike(name: string, rate: number) {
+  const n = name.trim().replace(/\/mo$/i, '').replace(/[$,\s]/g, '');
+  return n === String(rate) || Number(n) === rate;
+}
+function tierLabel(t: Tier) {
+  return priceLike(t.name, t.price) ? `${money(t.price)}/mo` : `${t.name} — ${money(t.price)}/mo`;
+}
 
 function fmt(ts: string) {
   return new Date(ts).toLocaleString('en-US', {
@@ -68,6 +78,7 @@ export default function ContactDetailPage() {
   const [busy, setBusy] = useState(false);
   const [completingCheckIn, setCompletingCheckIn] = useState<CheckIn | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [tiers, setTiers] = useState<Tier[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -88,6 +99,7 @@ export default function ContactDetailPage() {
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { getStages().then(setStages).catch(() => {}); }, []);
+  useEffect(() => { getTiers().then(setTiers).catch(() => {}); }, []);
 
   const undoable = activities.find(
     (a) => !a.undone_at && ['lifecycle_change', 'stage_change', 'rate_change'].includes(a.kind),
@@ -281,6 +293,7 @@ export default function ContactDetailPage() {
           kind={sheet}
           contact={c}
           stages={stages}
+          tiers={tiers}
           busy={busy}
           onClose={() => setSheet(null)}
           onDone={async (fn) => {
@@ -381,11 +394,12 @@ function CheckInSheet({
 // Action sheets
 // ---------------------------------------------------------------------------
 function ActionSheet({
-  kind, contact, stages, busy, onClose, onDone,
+  kind, contact, stages, tiers, busy, onClose, onDone,
 }: {
   kind: Exclude<Sheet, null>;
   contact: Contact;
   stages: Stage[];
+  tiers: Tier[];
   busy: boolean;
   onClose: () => void;
   onDone: (fn: () => Promise<unknown>) => void;
@@ -396,9 +410,14 @@ function ActionSheet({
   const [note, setNote] = useState('');
   const [followUp, setFollowUpDate] = useState(c.follow_up_on ?? '');
   const [rate, setRate] = useState('');
+  const [rateTierId, setRateTierId] = useState('');
   const [effective, setEffective] = useState(today());
   const [reason, setReason] = useState('');
   const [stageId, setStageId] = useState<string>(c.stage_id ?? '');
+
+  const isCustomRate = rateTierId === '__custom';
+  const selectedTier = tiers.find((t) => t.id === rateTierId);
+  const newRate = isCustomRate ? (rate ? Number(rate) : null) : (selectedTier?.price ?? null);
 
   // When switching to "lead", default the stage picker to the pipeline's first stage.
   useEffect(() => {
@@ -477,9 +496,19 @@ function ActionSheet({
             <h3>Schedule rate change</h3>
             <p className="hint">Appears on Today when due. You confirm it once you&rsquo;ve updated Stripe.</p>
             <div className="field">
-              <label>New monthly rate ($)</label>
-              <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 299" />
+              <label>New package</label>
+              <select value={rateTierId} onChange={(e) => setRateTierId(e.target.value)}>
+                <option value="" disabled>Choose a package…</option>
+                {tiers.map((t) => <option key={t.id} value={t.id}>{tierLabel(t)}</option>)}
+                <option value="__custom">Custom amount…</option>
+              </select>
             </div>
+            {isCustomRate && (
+              <div className="field">
+                <label>Custom monthly rate ($)</label>
+                <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 299" autoFocus />
+              </div>
+            )}
             <div className="field">
               <label>Effective date</label>
               <input type="date" value={effective} onChange={(e) => setEffective(e.target.value)} />
@@ -490,8 +519,8 @@ function ActionSheet({
             </div>
             <div className="sheet-actions">
               <button className="ghost" onClick={onClose}>Cancel</button>
-              <button className="go" disabled={busy || !rate || !effective}
-                onClick={() => onDone(() => scheduleRateChange(c.id, Number(rate), effective, reason || undefined))}>
+              <button className="go" disabled={busy || newRate == null || !effective}
+                onClick={() => onDone(() => scheduleRateChange(c.id, newRate!, effective, reason || undefined))}>
                 Schedule
               </button>
             </div>
