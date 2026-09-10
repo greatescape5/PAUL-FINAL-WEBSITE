@@ -6,8 +6,8 @@ import {
   getStages, createStage, updateStage, archiveStage,
   getTiers, createTier, updateTier, archiveTier,
   getPossibleDuplicates, mergeContacts,
-  getNewsletterOffer, saveNewsletterOffer,
-  type Stage, type Tier, type PossibleDuplicate, type NewsletterOffer,
+  getNewsletterCtas, createNewsletterCta, updateNewsletterCta, deleteNewsletterCta,
+  type Stage, type Tier, type PossibleDuplicate, type NewsletterCta,
 } from '@/lib/crm';
 
 export default function SettingsPage() {
@@ -20,9 +20,10 @@ export default function SettingsPage() {
   const [newTierPrice, setNewTierPrice] = useState('');
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<'tiers' | 'stages' | 'cta' | 'duplicates'>('tiers');
-  const [offer, setOffer] = useState<NewsletterOffer | null>(null);
-  const [savingOffer, setSavingOffer] = useState(false);
-  const [offerSaved, setOfferSaved] = useState(false);
+  const [ctas, setCtas] = useState<NewsletterCta[]>([]);
+  const emptyCta = { name: '', price_display: '', description: '', button_label: 'Sign up', signup_url: '' };
+  const [newCta, setNewCta] = useState(emptyCta);
+  const [addingCta, setAddingCta] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -39,32 +40,40 @@ export default function SettingsPage() {
     try { setTiers(await getTiers()); } catch { setTiers([]); }
   }, []);
 
-  const loadOffer = useCallback(async () => {
-    try { setOffer(await getNewsletterOffer()); } catch { setOffer(null); }
+  const loadCtas = useCallback(async () => {
+    try { setCtas(await getNewsletterCtas()); } catch { setCtas([]); }
   }, []);
 
-  useEffect(() => { load(); loadTiers(); loadOffer(); }, [load, loadTiers, loadOffer]);
+  useEffect(() => { load(); loadTiers(); loadCtas(); }, [load, loadTiers, loadCtas]);
 
-  // ---- Newsletter CTA offer ----
-  function setOfferField<K extends keyof NewsletterOffer>(key: K, value: NewsletterOffer[K]) {
-    setOffer((o) => (o ? { ...o, [key]: value } : o));
-    setOfferSaved(false);
-  }
-  async function saveOffer() {
-    if (!offer) return;
-    setSavingOffer(true);
+  // ---- Newsletter sign-up CTAs ----
+  async function addCta(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newCta.name.trim()) { alert('Give the CTA a name.'); return; }
+    setAddingCta(true);
     try {
-      await saveNewsletterOffer({
-        enabled: offer.enabled,
-        name: offer.name.trim(),
-        price_display: offer.price_display.trim(),
-        description: offer.description.trim(),
-        button_label: offer.button_label.trim() || 'Sign up',
-        signup_url: offer.signup_url.trim(),
+      await createNewsletterCta({
+        name: newCta.name.trim(),
+        price_display: newCta.price_display.trim(),
+        description: newCta.description.trim(),
+        button_label: newCta.button_label.trim() || 'Sign up',
+        signup_url: newCta.signup_url.trim(),
       });
-      setOfferSaved(true);
+      setNewCta(emptyCta);
+      loadCtas();
     } catch (e: any) { alert(e?.message ?? 'Could not save'); }
-    finally { setSavingOffer(false); }
+    finally { setAddingCta(false); }
+  }
+  async function saveCtaField(c: NewsletterCta, key: keyof Omit<NewsletterCta, 'id'>, value: string) {
+    const v = value.trim();
+    if (v === (c[key] ?? '')) return;
+    try { await updateNewsletterCta(c.id, { [key]: v }); loadCtas(); }
+    catch (e: any) { alert(e?.message ?? 'Could not save'); }
+  }
+  async function deleteCta(c: NewsletterCta) {
+    if (!confirm(`Delete the "${c.name || 'Untitled'}" CTA?`)) return;
+    try { await deleteNewsletterCta(c.id); loadCtas(); }
+    catch (e: any) { alert(e?.message ?? 'Could not delete'); }
   }
 
   // ---- Stages ----
@@ -203,54 +212,76 @@ export default function SettingsPage() {
           </div>
           )}
 
-          {/* ---- Newsletter sign-up CTA ---- */}
+          {/* ---- Newsletter sign-up CTAs ---- */}
           {tab === 'cta' && (
-          <div className="crm-card" style={{ padding: '18px 22px', maxWidth: 640 }}>
-            {!offer ? (
-              <p style={{ color: 'var(--crm-ink-soft)', margin: 0 }}>
-                The CTA offer isn&rsquo;t set up yet. Run migration 0012, then reload.
+          <>
+            {/* Info box: create a new CTA */}
+            <div className="crm-card" style={{ padding: '18px 22px', maxWidth: 680 }}>
+              <div className="crm-group-title" style={{ marginTop: 0 }}>New sign-up CTA</div>
+              <p style={{ color: 'var(--crm-ink-soft)', margin: '0 0 6px' }}>
+                Save reusable promo offers. Pick one to attach to a newsletter from the Subscriptions page.
               </p>
-            ) : (
-              <>
-                <p style={{ color: 'var(--crm-ink-soft)', marginTop: 0 }}>
-                  Configure the promotional offer the client can drop into a newsletter. When enabled,
-                  a &ldquo;Add the sign-up CTA&rdquo; box appears in the composer.
-                </p>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 16px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={offer.enabled} onChange={(e) => setOfferField('enabled', e.target.checked)} />
-                  <span>Offer this CTA (make it available in the composer)</span>
-                </label>
-
+              <form onSubmit={addCta}>
                 <div className="field">
                   <label>Package name</label>
-                  <input className="crm-search" value={offer.name} onChange={(e) => setOfferField('name', e.target.value)} placeholder="e.g. Kickstart" />
+                  <input className="crm-search" value={newCta.name} onChange={(e) => setNewCta({ ...newCta, name: e.target.value })} placeholder="e.g. Kickstart" />
                 </div>
                 <div className="field">
                   <label>Price (display text)</label>
-                  <input className="crm-search" value={offer.price_display} onChange={(e) => setOfferField('price_display', e.target.value)} placeholder="e.g. $79.99 for two months" />
+                  <input className="crm-search" value={newCta.price_display} onChange={(e) => setNewCta({ ...newCta, price_display: e.target.value })} placeholder="e.g. $79.99 for two months" />
                 </div>
                 <div className="field">
                   <label>Description</label>
-                  <textarea rows={3} className="crm-search" value={offer.description} onChange={(e) => setOfferField('description', e.target.value)} placeholder="A short pitch for the offer." style={{ resize: 'vertical' }} />
+                  <textarea rows={2} className="crm-search" value={newCta.description} onChange={(e) => setNewCta({ ...newCta, description: e.target.value })} placeholder="A short pitch for the offer." style={{ resize: 'vertical' }} />
                 </div>
                 <div className="field">
                   <label>Button label</label>
-                  <input className="crm-search" value={offer.button_label} onChange={(e) => setOfferField('button_label', e.target.value)} placeholder="Sign up" />
+                  <input className="crm-search" value={newCta.button_label} onChange={(e) => setNewCta({ ...newCta, button_label: e.target.value })} placeholder="Sign up" />
                 </div>
                 <div className="field">
                   <label>Sign-up link (PT Distinction URL)</label>
-                  <input className="crm-search" value={offer.signup_url} onChange={(e) => setOfferField('signup_url', e.target.value)} placeholder="https://…  (blank routes to the contact page)" />
+                  <input className="crm-search" value={newCta.signup_url} onChange={(e) => setNewCta({ ...newCta, signup_url: e.target.value })} placeholder="https://…  (blank routes to the contact page)" />
                 </div>
+                <button className="action-btn primary" type="submit" disabled={addingCta} style={{ marginTop: 8 }}>
+                  {addingCta ? 'Saving…' : 'Save CTA'}
+                </button>
+              </form>
+            </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                  <button className="action-btn primary" onClick={saveOffer} disabled={savingOffer}>
-                    {savingOffer ? 'Saving…' : 'Save CTA'}
-                  </button>
-                  {offerSaved && <span style={{ color: '#10b981', fontSize: '0.9rem' }}>Saved ✓</span>}
+            {/* Saved CTAs, below the info box */}
+            <div className="crm-group-title">Saved CTAs {ctas.length > 0 && <span className="count">{ctas.length}</span>}</div>
+            {ctas.length === 0 ? (
+              <div className="crm-card"><p style={{ color: 'var(--crm-ink-soft)', padding: '16px 18px', margin: 0 }}>No CTAs saved yet.</p></div>
+            ) : (
+              ctas.map((c) => (
+                <div key={c.id} className="crm-card cta-card" style={{ padding: '16px 20px', maxWidth: 680 }}>
+                  <div className="field" style={{ marginTop: 0 }}>
+                    <label>Package name</label>
+                    <input className="crm-search" defaultValue={c.name} onBlur={(e) => saveCtaField(c, 'name', e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>Price (display text)</label>
+                    <input className="crm-search" defaultValue={c.price_display} onBlur={(e) => saveCtaField(c, 'price_display', e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>Description</label>
+                    <textarea rows={2} className="crm-search" defaultValue={c.description} onBlur={(e) => saveCtaField(c, 'description', e.target.value)} style={{ resize: 'vertical' }} />
+                  </div>
+                  <div className="field">
+                    <label>Button label</label>
+                    <input className="crm-search" defaultValue={c.button_label} onBlur={(e) => saveCtaField(c, 'button_label', e.target.value)} />
+                  </div>
+                  <div className="field">
+                    <label>Sign-up link</label>
+                    <input className="crm-search" defaultValue={c.signup_url} onBlur={(e) => saveCtaField(c, 'signup_url', e.target.value)} placeholder="https://… (blank routes to the contact page)" />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button className="action-btn" onClick={() => deleteCta(c)}>Delete</button>
+                  </div>
                 </div>
-              </>
+              ))
             )}
-          </div>
+          </>
           )}
 
           {/* ---- Duplicates ---- */}

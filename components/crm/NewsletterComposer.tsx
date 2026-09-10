@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { sendNewsletter, uploadNewsletterImage, getNewsletterOffer, type NewsletterOffer } from '@/lib/crm';
+import { sendNewsletter, uploadNewsletterImage, getNewsletterCtas, type NewsletterCta } from '@/lib/crm';
 
 // Lightweight WYSIWYG for the monthly newsletter. Uses execCommand (deprecated
 // but universally supported) — plenty for a single-author internal tool. The
@@ -19,17 +19,14 @@ export default function NewsletterComposer({
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState('');
-  const [offer, setOffer] = useState<NewsletterOffer | null>(null);
-  const [includeCta, setIncludeCta] = useState(false);
+  const [ctas, setCtas] = useState<NewsletterCta[]>([]);
+  const [selectedCtaId, setSelectedCtaId] = useState<string | null>(null);
 
   useEffect(() => {
-    getNewsletterOffer().then((o) => {
-      setOffer(o);
-      if (o?.enabled) setIncludeCta(true);
-    }).catch(() => {});
+    getNewsletterCtas().then(setCtas).catch(() => {});
   }, []);
 
-  const offerReady = !!offer?.enabled;
+  const selectedCta = ctas.find((c) => c.id === selectedCtaId) ?? null;
 
   function exec(cmd: string, value?: string) {
     editorRef.current?.focus();
@@ -68,7 +65,7 @@ export default function NewsletterComposer({
     setSending(true);
     setErr('');
     try {
-      const { sent } = await sendNewsletter(subject.trim(), html, offerReady && includeCta);
+      const { sent } = await sendNewsletter(subject.trim(), html, selectedCtaId);
       setSubject('');
       if (editorRef.current) editorRef.current.innerHTML = '';
       onSent(sent);
@@ -113,25 +110,35 @@ export default function NewsletterComposer({
       </div>
 
       <div className="nl-cta-toggle">
-        {offerReady ? (
+        {ctas.length > 0 ? (
           <>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" checked={includeCta} onChange={(e) => setIncludeCta(e.target.checked)} />
-              <span>Add the sign-up CTA to the bottom</span>
-            </label>
-            {includeCta && (
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Add a sign-up CTA to the bottom</div>
+            <div className="nl-cta-list">
+              {ctas.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`nl-cta-chip${selectedCtaId === c.id ? ' on' : ''}`}
+                  onClick={() => setSelectedCtaId(selectedCtaId === c.id ? null : c.id)}
+                >
+                  <span className="nm">{c.name || 'Untitled offer'}</span>
+                  {c.price_display && <span className="pr">{c.price_display}</span>}
+                </button>
+              ))}
+            </div>
+            {selectedCta && (
               <div className="nl-cta-preview">
                 <div className="nl-cta-eyebrow">Special offer</div>
-                {offer?.name && <div className="nl-cta-name">{offer.name}</div>}
-                {offer?.price_display && <div className="nl-cta-price">{offer.price_display}</div>}
-                {offer?.description && <div className="nl-cta-desc">{offer.description}</div>}
-                <span className="nl-cta-btn">{offer?.button_label || 'Sign up'}</span>
+                {selectedCta.name && <div className="nl-cta-name">{selectedCta.name}</div>}
+                {selectedCta.price_display && <div className="nl-cta-price">{selectedCta.price_display}</div>}
+                {selectedCta.description && <div className="nl-cta-desc">{selectedCta.description}</div>}
+                <span className="nl-cta-btn">{selectedCta.button_label || 'Sign up'}</span>
               </div>
             )}
           </>
         ) : (
           <p className="nl-hint" style={{ margin: 0 }}>
-            No sign-up CTA is set up yet. Configure one in <Link href="/admin/settings">Settings → Sign-up CTA</Link> to offer it here.
+            No sign-up CTAs yet. Create one in <Link href="/admin/settings">Settings → Sign-up CTA</Link> to offer it here.
           </p>
         )}
       </div>

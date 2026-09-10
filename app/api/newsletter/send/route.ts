@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Email sending is not configured (missing Resend key or from-address).' }, { status: 500 });
   }
 
-  let body: { subject?: string; html?: string; includeCta?: boolean };
+  let body: { subject?: string; html?: string; ctaId?: string | null };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
@@ -77,13 +77,13 @@ export async function POST(req: Request) {
 
   // Optional sign-up CTA block, appended after the body.
   let offerHtml = '';
-  if (body.includeCta) {
-    const { data: offer } = await admin
-      .from('newsletter_offer').select('*').eq('id', 1).maybeSingle();
-    if (offer?.enabled) {
+  if (body.ctaId) {
+    const { data: cta } = await admin
+      .from('newsletter_ctas').select('*').eq('id', body.ctaId).maybeSingle();
+    if (cta) {
       offerHtml = offerCtaBlock({
-        name: offer.name, priceDisplay: offer.price_display, description: offer.description,
-        buttonLabel: offer.button_label, signupUrl: offer.signup_url,
+        name: cta.name, priceDisplay: cta.price_display, description: cta.description,
+        buttonLabel: cta.button_label, signupUrl: cta.signup_url,
       });
     }
   }

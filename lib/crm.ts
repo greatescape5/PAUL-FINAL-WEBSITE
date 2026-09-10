@@ -533,10 +533,9 @@ export async function getBroadcasts() {
   return data as Broadcast[]
 }
 
-// ---- Configurable newsletter sign-up CTA (see migration 0012) ----
-export interface NewsletterOffer {
-  id: number
-  enabled: boolean
+// ---- Reusable newsletter sign-up CTAs (see migration 0013) ----
+export interface NewsletterCta {
+  id: string
   name: string
   price_display: string
   description: string
@@ -544,20 +543,29 @@ export interface NewsletterOffer {
   signup_url: string
 }
 
-export async function getNewsletterOffer() {
+export async function getNewsletterCtas() {
   const { data, error } = await supabase
-    .from('newsletter_offer')
-    .select('id,enabled,name,price_display,description,button_label,signup_url')
-    .eq('id', 1).maybeSingle()
+    .from('newsletter_ctas')
+    .select('id,name,price_display,description,button_label,signup_url')
+    .order('created_at', { ascending: true })
   if (error) throw error
-  return data as NewsletterOffer | null
+  return data as NewsletterCta[]
 }
 
-export async function saveNewsletterOffer(patch: Partial<Omit<NewsletterOffer, 'id'>>) {
-  const { error } = await supabase
-    .from('newsletter_offer')
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq('id', 1)
+export async function createNewsletterCta(fields: Omit<NewsletterCta, 'id'>) {
+  const { data, error } = await supabase
+    .from('newsletter_ctas').insert(fields).select('id').single()
+  if (error) throw error
+  return data.id as string
+}
+
+export async function updateNewsletterCta(id: string, patch: Partial<Omit<NewsletterCta, 'id'>>) {
+  const { error } = await supabase.from('newsletter_ctas').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteNewsletterCta(id: string) {
+  const { error } = await supabase.from('newsletter_ctas').delete().eq('id', id)
   if (error) throw error
 }
 
@@ -574,13 +582,13 @@ export async function uploadNewsletterImage(file: File) {
 }
 
 /** Sends the composed newsletter to all subscribed contacts (via the server). */
-export async function sendNewsletter(subject: string, html: string, includeCta = false): Promise<{ sent: number }> {
+export async function sendNewsletter(subject: string, html: string, ctaId: string | null = null): Promise<{ sent: number }> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Your session expired — sign in again.')
   const res = await fetch('/api/newsletter/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({ subject, html, includeCta }),
+    body: JSON.stringify({ subject, html, ctaId }),
   })
   const out = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(out?.error || 'Send failed')

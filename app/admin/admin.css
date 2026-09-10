@@ -293,3 +293,16 @@
 .nl-cta-price { font-size: 1rem; font-weight: 600; color: var(--red); margin-top: 2px; }
 .nl-cta-desc { font-size: 0.92rem; color: var(--crm-ink-soft); margin-top: 6px; line-height: 1.5; }
 .nl-cta-btn { display: inline-block; margin-top: 12px; background: var(--red); color: #fff; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }
+
+/* ---------- Newsletter CTA chooser (composer) ---------- */
+.nl-cta-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.nl-cta-chip {
+  display: inline-flex; align-items: baseline; gap: 8px; cursor: pointer;
+  border: 1px solid var(--crm-border); background: #fff; border-radius: 999px;
+  padding: 7px 14px; font-family: inherit; font-size: 0.9rem; color: var(--crm-ink);
+}
+.nl-cta-chip:hover { border-color: var(--blue); }
+.nl-cta-chip.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+.nl-cta-chip .nm { font-weight: 600; }
+.nl-cta-chip .pr { font-size: 0.82rem; opacity: 0.8; }
+.cta-card { margin-bottom: 12px; }
