@@ -177,6 +177,13 @@ export async function applyRateChange(rateChangeId: string) {
   return data as Contact
 }
 
+/** Sets a contact's monthly rate effective today (schedule + immediately apply),
+ *  so it lands in MRR now while keeping the audited, undoable rate-change trail. */
+export async function setRateNow(contactId: string, toRate: number, reason?: string) {
+  const rc = await scheduleRateChange(contactId, toRate, new Date().toISOString().slice(0, 10), reason)
+  return applyRateChange(rc.id)
+}
+
 export async function mergeContacts(keepId: string, mergeId: string) {
   const { data, error } = await supabase.rpc('merge_contacts', {
     p_keep: keepId, p_merge: mergeId,

@@ -7,7 +7,7 @@ import CrmShell from '@/components/crm/CrmShell';
 import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
-  getContact, setLifecycle, undoLastChange, scheduleRateChange, addNote,
+  getContact, setLifecycle, undoLastChange, scheduleRateChange, setRateNow, addNote,
   setFollowUp, clearReview, setStage, getStages, getTiers,
   getCheckIns, addCheckIn, deleteCheckIn, checkInNoteLabels,
   getFollowUps,
@@ -428,7 +428,8 @@ function ActionSheet({
 
   const lifeChanged = lifecycle !== c.lifecycle;
   const stageChanged = lifecycle === 'lead' && !!stageId && stageId !== (c.stage_id ?? '');
-  const canSaveStatus = lifeChanged || stageChanged;
+  const rateChosen = lifecycle === 'client' && newRate != null && newRate !== (c.monthly_rate ?? null);
+  const canSaveStatus = lifeChanged || stageChanged || rateChosen;
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -453,6 +454,24 @@ function ActionSheet({
                 </select>
               </div>
             )}
+            {lifecycle === 'client' && (
+              <>
+                <div className="field">
+                  <label>Package{c.monthly_rate != null ? ` (currently ${money(c.monthly_rate)}/mo)` : ''}</label>
+                  <select value={rateTierId} onChange={(e) => setRateTierId(e.target.value)}>
+                    <option value="">{c.monthly_rate != null ? 'Keep current rate' : 'Choose a package…'}</option>
+                    {tiers.map((t) => <option key={t.id} value={t.id}>{tierLabel(t)}</option>)}
+                    <option value="__custom">Custom amount…</option>
+                  </select>
+                </div>
+                {isCustomRate && (
+                  <div className="field">
+                    <label>Custom monthly rate ($)</label>
+                    <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 199" autoFocus />
+                  </div>
+                )}
+              </>
+            )}
             {lifecycle === 'paused' && (
               <div className="field">
                 <label>Expected return date</label>
@@ -469,6 +488,7 @@ function ActionSheet({
                 onClick={() => onDone(async () => {
                   if (lifeChanged) await setLifecycle(c.id, lifecycle, { note: note || undefined, expectedReturn: expectedReturn || undefined });
                   if (stageChanged) await setStage(c.id, stageId, lifeChanged ? undefined : (note || undefined));
+                  if (rateChosen && newRate != null) await setRateNow(c.id, newRate);
                 })}>
                 Save
               </button>
