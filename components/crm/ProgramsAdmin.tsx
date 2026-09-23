@@ -16,6 +16,7 @@ export default function ProgramsAdmin() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try { setPrograms(await getProgramsAdmin()); }
@@ -69,19 +70,20 @@ export default function ProgramsAdmin() {
     setAdding(true);
     try {
       const next = programs.length ? Math.max(...programs.map((p) => p.sort_order)) + 10 : 10;
-      await createProgram({
+      const id = await createProgram({
         slug: `new-program-${Math.random().toString(36).slice(2, 7)}`,
         name: 'New program', tagline: '', description: '', price_display: '',
         term_options: '', features: [], published: false, sort_order: next,
       });
       await load();
+      setEditingId(id); // jump straight into the new program's editor
     } catch (e: any) { alert(e?.message ?? 'Could not add'); }
     finally { setAdding(false); }
   }
 
   async function remove(p: ProgramRow) {
     if (!confirm(`Delete the "${p.name || 'Untitled'}" program? This removes it from the website.`)) return;
-    try { await deleteProgram(p.id); await load(); }
+    try { await deleteProgram(p.id); setEditingId(null); await load(); }
     catch (e: any) { alert(e?.message ?? 'Could not delete'); }
   }
 
@@ -100,30 +102,61 @@ export default function ProgramsAdmin() {
 
   if (loading) return <div className="crm-loading">Loading…</div>;
 
+  const editIdx = programs.findIndex((p) => p.id === editingId);
+
+  // ---- Grid of tiles ----
+  if (editIdx < 0) {
+    return (
+      <>
+        <div className="crm-toolbar" style={{ marginBottom: 14 }}>
+          <p style={{ color: 'var(--crm-ink-soft)', margin: 0, flex: 1 }}>
+            These are the packages shown on the public <strong>/programs</strong> page. Click one to edit — changes go live within a minute.
+          </p>
+          <button className="action-btn primary" onClick={addProgram} disabled={adding}>
+            {adding ? 'Adding…' : '+ Add program'}
+          </button>
+        </div>
+
+        {programs.length === 0 ? (
+          <div className="crm-card"><p style={{ color: 'var(--crm-ink-soft)', padding: '16px 18px', margin: 0 }}>No programs yet. Add your first above.</p></div>
+        ) : (
+          <div className="pe-tiles">
+            {programs.map((p) => (
+              <button key={p.id} className="pe-tile" onClick={() => setEditingId(p.id)}>
+                <div className="pe-tile-badges">
+                  {!p.published && <span className="pe-badge off">Draft</span>}
+                  {p.featured && <span className="pe-badge feat">Featured</span>}
+                </div>
+                <div className="pe-tile-name">{p.name || 'Untitled program'}</div>
+                {p.tagline && <div className="pe-tile-tag">{p.tagline}</div>}
+                <div className="pe-tile-meta">
+                  {p.price_display || 'No price'}{p.term_options ? ` · ${p.term_options}` : ''}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // ---- Single program editor ----
+  const p = programs[editIdx];
+  const idx = editIdx;
   return (
     <>
-      <div className="crm-toolbar" style={{ marginBottom: 12 }}>
-        <p style={{ color: 'var(--crm-ink-soft)', margin: 0, flex: 1 }}>
-          These are the packages shown on the public <strong>/programs</strong> page. Edits go live within a minute.
-        </p>
-        <button className="action-btn primary" onClick={addProgram} disabled={adding}>
-          {adding ? 'Adding…' : '+ Add program'}
-        </button>
+      <div className="crm-toolbar" style={{ marginBottom: 14 }}>
+        <button className="crm-back" onClick={() => setEditingId(null)} style={{ cursor: 'pointer', background: 'none', border: 'none' }}>← All programs</button>
+        <div style={{ flex: 1 }} />
+        <button className="action-btn" style={{ padding: '6px 10px' }} disabled={idx === 0} onClick={() => move(idx, -1)}>↑ Move up</button>
+        <button className="action-btn" style={{ padding: '6px 10px' }} disabled={idx === programs.length - 1} onClick={() => move(idx, 1)}>↓ Move down</button>
       </div>
 
-      {programs.length === 0 && (
-        <div className="crm-card"><p style={{ color: 'var(--crm-ink-soft)', padding: '16px 18px', margin: 0 }}>No programs yet. Add your first above.</p></div>
-      )}
-
-      {programs.map((p, idx) => (
-        <div key={p.id} className="crm-card program-editor" style={{ padding: '18px 22px', maxWidth: 760 }}>
-          <div className="program-editor-head">
-            <label className="pe-toggle"><input type="checkbox" checked={p.published} onChange={(e) => patch(idx, 'published', e.target.checked)} /> Published</label>
-            <label className="pe-toggle"><input type="checkbox" checked={p.featured} onChange={(e) => patch(idx, 'featured', e.target.checked)} /> Featured (&ldquo;Most Popular&rdquo;)</label>
-            <div style={{ flex: 1 }} />
-            <button className="action-btn" style={{ padding: '6px 10px' }} disabled={idx === 0} onClick={() => move(idx, -1)}>↑</button>
-            <button className="action-btn" style={{ padding: '6px 10px' }} disabled={idx === programs.length - 1} onClick={() => move(idx, 1)}>↓</button>
-          </div>
+      <div className="crm-card program-editor" style={{ padding: '18px 22px', maxWidth: 760 }}>
+        <div className="program-editor-head">
+          <label className="pe-toggle"><input type="checkbox" checked={p.published} onChange={(e) => patch(idx, 'published', e.target.checked)} /> Published</label>
+          <label className="pe-toggle"><input type="checkbox" checked={p.featured} onChange={(e) => patch(idx, 'featured', e.target.checked)} /> Featured (&ldquo;Most Popular&rdquo;)</label>
+        </div>
 
           <div className="pe-grid">
             <div className="field"><label>Package name</label>
@@ -175,8 +208,7 @@ export default function ProgramsAdmin() {
             <div style={{ flex: 1 }} />
             <button className="action-btn" onClick={() => remove(p)}>Delete</button>
           </div>
-        </div>
-      ))}
+      </div>
     </>
   );
 }
