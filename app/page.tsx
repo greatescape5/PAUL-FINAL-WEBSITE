@@ -36,43 +36,31 @@ export default function HomePage() {
     <>
       <JsonLd data={businessSchema()} />
 
-      {/* HERO */}
-      <section
-        className="hero home-hero"
-        style={{ ['--blue-image' as string]: "url('/photos/hero-mountains.jpg')" }}
-      >
-        <div className="container center">
-          <span className="tag">{BUSINESS.address.city}, {BUSINESS.address.region} · Online Coaching</span>
-          <h1>1:1 Online Fitness Coaching</h1>
-          <p className="lead" style={{ margin: '10px auto 0' }}>
-            A personal training experience, with the freedom your life demands.
-          </p>
-          <div className="btn-row center" style={{ marginTop: 26 }}>
-            <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* EVIDENCE-BASED — layered photo collage + benefits */}
-      <section className="section intro-section">
+      {/* HERO — evidence-based intro promoted to the top: copy left, collage
+          right, plain field (reference-style), with the primary CTA. */}
+      <section className="home-lead">
         <div className="container">
-          <div className="intro-grid">
-            <div className="collage" aria-hidden="true">
-              <span className="collage-blob" />
-              <img className="collage-photo p1" src="/photos/headshot.png" alt="" />
-              <img className="collage-photo p2" src="/photos/snow.png" alt="" />
-            </div>
-            <div className="intro-copy">
+          <div className="lead-grid">
+            <div className="lead-copy">
               <span className="eyebrow-red">Evidence-Based Fitness. Life-Based Application.</span>
-              <h2 className="intro-head">
-                Implementing proven fitness practices into the context of your unique
-                life to build and support long-term health
-              </h2>
+              <h1 className="lead-head">1:1 Online Fitness Coaching</h1>
+              <p className="lead-sub">
+                A personal training experience, with the freedom your life demands.
+              </p>
               <div className="benefit-list">
                 {BENEFITS.map((b) => (
                   <p key={b.title}><strong>{b.title}:</strong> {b.text}</p>
                 ))}
               </div>
+              <div className="lead-cta">
+                <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>
+                <Link href="/programs" className="lead-link">Or see how my coaching works &rarr;</Link>
+              </div>
+            </div>
+            <div className="collage" aria-hidden="true">
+              <span className="collage-blob" />
+              <img className="collage-photo p1" src="/photos/headshot.png" alt="" />
+              <img className="collage-photo p2" src="/photos/snow.png" alt="" />
             </div>
           </div>
         </div>
