@@ -1,16 +1,21 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getProgram, getPrograms } from '@/lib/programs';
+import { getPublishedProgram, getPublishedPrograms } from '@/lib/programs-server';
 import { BUSINESS } from '@/lib/site';
 
-// Pre-render every published program at build time.
-export function generateStaticParams() {
-  return getPrograms().map((p) => ({ slug: p.slug }));
+// Re-read program edits from the DB without a redeploy; render new slugs on demand.
+export const revalidate = 60;
+export const dynamicParams = true;
+
+// Pre-render every published program.
+export async function generateStaticParams() {
+  const programs = await getPublishedPrograms();
+  return programs.map((p) => ({ slug: p.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const program = getProgram(params.slug);
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const program = await getPublishedProgram(params.slug);
   if (!program) return { title: 'Program Not Found' };
   const desc = `${program.tagline} ${program.description}`.slice(0, 160);
   return {
@@ -27,8 +32,8 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ProgramDetailPage({ params }: { params: { slug: string } }) {
-  const program = getProgram(params.slug);
+export default async function ProgramDetailPage({ params }: { params: { slug: string } }) {
+  const program = await getPublishedProgram(params.slug);
   if (!program) notFound();
 
   // Purchase action. When PT Distinction is wired up (Phase 4), `ptdUrl` holds

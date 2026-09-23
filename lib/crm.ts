@@ -540,6 +540,48 @@ export async function getBroadcasts() {
   return data as Broadcast[]
 }
 
+// ---- Programs / packages (see migration 0014) ----
+export interface ProgramRow {
+  id: string
+  slug: string
+  name: string
+  tagline: string
+  description: string
+  price_display: string
+  price_note: string
+  term_options: string
+  features: string[]
+  cover_image: string
+  cta_label: string
+  ptd_url: string
+  featured: boolean
+  published: boolean
+  sort_order: number
+}
+
+export async function getProgramsAdmin() {
+  const { data, error } = await supabase
+    .from('programs').select('*').order('sort_order', { ascending: true })
+  if (error) throw error
+  return (data as ProgramRow[]).map((p) => ({ ...p, features: Array.isArray(p.features) ? p.features : [] }))
+}
+
+export async function createProgram(fields: Partial<Omit<ProgramRow, 'id'>> & { slug: string }) {
+  const { data, error } = await supabase.from('programs').insert(fields).select('id').single()
+  if (error) throw error
+  return data.id as string
+}
+
+export async function updateProgram(id: string, patch: Partial<Omit<ProgramRow, 'id'>>) {
+  const { error } = await supabase.from('programs').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteProgram(id: string) {
+  const { error } = await supabase.from('programs').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ---- Reusable newsletter sign-up CTAs (see migration 0013) ----
 export interface NewsletterCta {
   id: string

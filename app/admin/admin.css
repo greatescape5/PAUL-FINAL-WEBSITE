@@ -306,3 +306,10 @@
 .nl-cta-chip .nm { font-weight: 600; }
 .nl-cta-chip .pr { font-size: 0.82rem; opacity: 0.8; }
 .cta-card { margin-bottom: 12px; }
+
+/* ---------- Programs editor (settings) ---------- */
+.program-editor { margin-bottom: 14px; }
+.program-editor-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+.pe-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; color: var(--crm-ink); cursor: pointer; }
+.pe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .pe-grid { grid-template-columns: 1fr; } }

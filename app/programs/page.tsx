@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getPrograms } from '@/lib/programs';
+import { getPublishedPrograms } from '@/lib/programs-server';
+
+// Re-read program edits from the DB without a redeploy.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Programs',
@@ -16,8 +19,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ProgramsPage() {
-  const programs = getPrograms();
+export default async function ProgramsPage() {
+  const programs = await getPublishedPrograms();
 
   return (
     <>
