@@ -9,6 +9,7 @@ type Row = {
   slug: string; name: string; tagline: string; description: string;
   price_display: string; price_note: string; term_options: string;
   features: unknown; cover_image: string; cta_label: string; ptd_url: string;
+  one_off: boolean; ptd_url_home: string; ptd_url_gym: string;
   featured: boolean; published: boolean; sort_order: number;
 };
 
@@ -32,6 +33,9 @@ function mapRow(r: Row): Program {
     coverImage: r.cover_image,
     ctaLabel: r.cta_label || undefined,
     ptdUrl: r.ptd_url || undefined,
+    oneOff: r.one_off,
+    ptdUrlGym: r.ptd_url_gym || undefined,
+    ptdUrlHome: r.ptd_url_home || undefined,
     featured: r.featured,
     published: r.published,
   };

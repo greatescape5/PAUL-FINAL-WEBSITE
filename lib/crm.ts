@@ -554,6 +554,9 @@ export interface ProgramRow {
   cover_image: string
   cta_label: string
   ptd_url: string
+  one_off: boolean
+  ptd_url_home: string
+  ptd_url_gym: string
   featured: boolean
   published: boolean
   sort_order: number

@@ -36,11 +36,14 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
   const program = await getPublishedProgram(params.slug);
   if (!program) notFound();
 
-  // Purchase action. When PT Distinction is wired up (Phase 4), `ptdUrl` holds
-  // the package signup/embed link; until then the action routes to the contact
-  // form so no lead is lost.
-  const actionHref = program.ptdUrl || '/contact#get-in-touch';
+  // Purchase action. `ptdUrl` holds the PT Distinction signup link; until it's
+  // set, the action routes to the contact form so no lead is lost. One-off
+  // programs offer two versions (At the Gym / At Home), each its own link.
+  const fallback = '/contact#get-in-touch';
+  const actionHref = program.ptdUrl || fallback;
   const actionLabel = program.ctaLabel || `Get Started with ${program.name}`;
+  const gymHref = program.ptdUrlGym || fallback;
+  const homeHref = program.ptdUrlHome || fallback;
 
   return (
     <>
@@ -86,9 +89,23 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
                 <p className="program-terms">{program.termOptions}</p>
                 {program.priceNote && <p className="form-note" style={{ marginTop: 4 }}>{program.priceNote}</p>}
 
-                <a href={actionHref} className="btn btn-primary" style={{ width: '100%', textAlign: 'center', marginTop: 18 }}>
-                  {actionLabel}
-                </a>
+                {program.oneOff ? (
+                  <>
+                    <p className="form-note" style={{ marginTop: 16, marginBottom: 6, fontWeight: 600, color: 'var(--ink)' }}>
+                      Choose your version:
+                    </p>
+                    <a href={gymHref} className="btn btn-primary" style={{ width: '100%', textAlign: 'center' }}>
+                      Get Started &mdash; At the Gym
+                    </a>
+                    <a href={homeHref} className="btn btn-outline" style={{ width: '100%', textAlign: 'center', marginTop: 10 }}>
+                      Get Started &mdash; At Home
+                    </a>
+                  </>
+                ) : (
+                  <a href={actionHref} className="btn btn-primary" style={{ width: '100%', textAlign: 'center', marginTop: 18 }}>
+                    {actionLabel}
+                  </a>
+                )}
 
                 <p className="form-note" style={{ marginTop: 14 }}>
                   Onboarding and your program are handled in the PT Distinction app.

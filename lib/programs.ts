@@ -25,71 +25,130 @@ export type Program = {
   coverImage: string;       // /photos/...
   ctaLabel?: string;        // button label (defaults to "Get Started")
   ptdUrl?: string;          // PT Distinction signup/embed URL. Empty → routes to /contact for now.
+  oneOff?: boolean;         // sold once, in two versions (At the Gym / At Home)
+  ptdUrlGym?: string;       // one-off: "At the Gym" (Box Gym) signup link
+  ptdUrlHome?: string;      // one-off: "At Home" signup link
   featured?: boolean;       // highlights the card as "Most Popular"
   published: boolean;       // hide from the site without deleting
 };
 
-// TODO (Paul): replace names, prices, inclusions, and cover images with the
-// real programs. Prices below are PLACEHOLDERS.
+// Fallback lineup, mirrored from migration 0015. The live site reads these from
+// the database (lib/programs-server.ts); this array is only used if the DB is
+// unreachable, so keep it in sync when the packages change.
 export const PROGRAMS: Program[] = [
   {
-    slug: 'self-guided',
-    name: 'Self-Guided Training',
-    tagline: 'Your custom plan, on your schedule.',
+    slug: 'starter',
+    name: 'Starter',
+    tagline: 'A focused first month — gym or home.',
     description:
-      'A training and nutrition plan built specifically for your goals, delivered through the PT Distinction app so you can train whenever and wherever works. Perfect if you want expert programming and structure while running the day-to-day yourself.',
-    priceDisplay: '$99/mo',
-    priceNote: 'Placeholder pricing — update in lib/programs.ts',
-    termOptions: 'Monthly · 3 or 6 month',
+      'A focused four-week starter program in a single training phase. Pick the At the Gym or At Home version to match your setup — same price, same structure. You get full app access, the exercise video library, and workout logging, with an upgrade offer when you finish.',
+    priceDisplay: '$49',
+    priceNote: 'One-time',
+    termOptions: '4 weeks · single phase',
     features: [
-      'Custom training program built around your goals',
-      'Delivered in the PT Distinction app',
-      'Exercise video library and technique cues',
-      'Nutrition guidelines and habit targets',
-      'Program refreshed every 4 weeks',
-      'Email support when you need it',
+      '4 weeks, single training phase',
+      'Choose At the Gym or At Home',
+      'Full app access',
+      'Exercise video library',
+      'Workout logging',
+      'Upgrade offer at completion',
     ],
     coverImage: '/photos/trainer-rack.png',
+    oneOff: true,
     published: true,
   },
   {
-    slug: '1-1-coaching',
-    name: '1:1 Online Coaching',
-    tagline: 'Full coaching, built around your life.',
+    slug: 'kickstart',
+    name: 'Kickstart',
+    tagline: 'Eight weeks, two progressive phases.',
     description:
-      'The complete 1:1 experience. Fully individualized training and nutrition, direct communication with Paul, and the accountability that actually makes results stick — all without stepping foot in a gym on his schedule.',
-    priceDisplay: '$199/mo',
-    priceNote: 'Placeholder pricing — update in lib/programs.ts',
-    termOptions: '3, 6, or 12 month',
+      'An eight-week program across two progressive phases, in your choice of At the Gym or At Home. Everything in Starter plus a halfway check-in to keep you on track, with an upgrade offer at completion.',
+    priceDisplay: '$79',
+    priceNote: 'One-time',
+    termOptions: '8 weeks · two phases',
     features: [
-      'Everything in Self-Guided, plus:',
-      'Fully individualized training and nutrition',
-      'Direct 1:1 messaging with Paul',
-      'Weekly check-ins and progress reviews',
-      'Form checks on your key lifts',
-      'Ongoing adjustments as life changes',
-      'Real accountability that keeps you moving',
+      '8 weeks, two progressive phases',
+      'Choose At the Gym or At Home',
+      'Everything in Starter, plus:',
+      'Halfway check-in',
+      'Upgrade offer at completion',
+    ],
+    coverImage: '/photos/productive.jpg',
+    oneOff: true,
+    published: true,
+  },
+  {
+    slug: 'transformation',
+    name: 'Transformation',
+    tagline: 'A full twelve-week transformation.',
+    description:
+      'A full twelve-week transformation across three progressive phases, in At the Gym or At Home. Everything in Kickstart plus a mid-point reassessment to recalibrate your plan.',
+    priceDisplay: '$109',
+    priceNote: 'One-time',
+    termOptions: '12 weeks · three phases',
+    features: [
+      '12 weeks, three progressive phases',
+      'Choose At the Gym or At Home',
+      'Everything in Kickstart, plus:',
+      'Mid-point reassessment',
+      'Upgrade offer at completion',
+    ],
+    coverImage: '/photos/simple.jpg',
+    oneOff: true,
+    published: true,
+  },
+  {
+    slug: 'build',
+    name: 'Build',
+    tagline: 'Ongoing training that keeps progressing.',
+    description:
+      'Ongoing training with workout optimization and automatic program progression, delivered in the app. Full app access, the exercise library, workout logging, and habit tracking, with a quarterly check-in.',
+    priceDisplay: '$99/mo',
+    termOptions: 'Monthly',
+    features: [
+      'Ongoing training and progression',
+      'Workout optimization',
+      'Full app access and exercise library',
+      'Workout logging and habit tracking',
+      'Quarterly check-in',
     ],
     coverImage: '/photos/coaching.png',
+    published: true,
+  },
+  {
+    slug: 'accountability',
+    name: 'Accountability',
+    tagline: 'Real accountability, month to month.',
+    description:
+      'Everything in Build, with real accountability — a diet review, a monthly check-in with written feedback, direct messaging, form-check video review, and programming adjusted month to month.',
+    priceDisplay: '$249/mo',
+    termOptions: 'Monthly',
+    features: [
+      'Everything in Build, plus:',
+      'Diet review',
+      'Monthly check-in with written feedback',
+      'Direct messaging',
+      'Form-check video review',
+      'Programming adjusted monthly',
+    ],
+    coverImage: '/photos/enjoyable.jpg',
     featured: true,
     published: true,
   },
   {
-    slug: 'premium-coaching',
-    name: 'Premium Coaching',
-    tagline: 'The highest-touch experience.',
+    slug: '1-1-coaching',
+    name: '1:1 Coaching',
+    tagline: 'The complete, bespoke experience.',
     description:
-      'For those who want the most support and the fastest progress. Everything in 1:1 Coaching plus scheduled video calls, priority communication, and deeper coaching across nutrition, recovery, and lifestyle.',
-    priceDisplay: '$349/mo',
-    priceNote: 'Placeholder pricing — update in lib/programs.ts',
+      'The full 1:1 experience. Everything in Accountability plus priority access with same-day replies, fully bespoke programming, and regular video calls. 3, 6, or 12-month term with a signed agreement.',
+    priceDisplay: '$449/mo',
     termOptions: '3, 6, or 12 month',
     features: [
-      'Everything in 1:1 Coaching, plus:',
-      'Scheduled video coaching calls',
-      'Priority messaging with same-day replies',
-      'Deeper nutrition coaching',
-      'Sleep, recovery, and lifestyle guidance',
-      'Quarterly goal-setting sessions',
+      'Everything in Accountability, plus:',
+      'Priority access, same-day replies',
+      'Fully bespoke programming',
+      'Regular video calls',
+      '3, 6, or 12-month term',
     ],
     coverImage: '/photos/headshot.png',
     published: true,
