@@ -43,9 +43,10 @@ export default function HomePage() {
           <div className="lead-grid">
             <div className="lead-copy">
               <span className="eyebrow-red">Evidence-Based Fitness. Life-Based Application.</span>
-              <h1 className="lead-head">1:1 Online Fitness Coaching</h1>
+              <h1 className="lead-head">Online fitness coaching that meets you where you&rsquo;re at</h1>
               <p className="lead-sub">
-                A personal training experience, with the freedom your life demands.
+                From ready-to-run programs to full 1:1 coaching &mdash; start with the
+                level of support that fits your life right now.
               </p>
               <div className="benefit-list">
                 {BENEFITS.map((b) => (
@@ -53,8 +54,8 @@ export default function HomePage() {
                 ))}
               </div>
               <div className="lead-cta">
-                <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>
-                <Link href="/programs" className="lead-link">Or see how my coaching works &rarr;</Link>
+                <Link href="/programs" className="btn btn-primary">Browse Programs</Link>
+                <Link href="/contact#get-in-touch" className="lead-link">Or start a conversation &rarr;</Link>
               </div>
             </div>
             <div className="collage" aria-hidden="true">
