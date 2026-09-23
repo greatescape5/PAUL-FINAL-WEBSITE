@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import CrmShell from '@/components/crm/CrmShell';
-import ProgramsAdmin from '@/components/crm/ProgramsAdmin';
 import {
   getStages, createStage, updateStage, archiveStage,
   getTiers, createTier, updateTier, archiveTier,
@@ -20,7 +19,7 @@ export default function SettingsPage() {
   const [newTierName, setNewTierName] = useState('');
   const [newTierPrice, setNewTierPrice] = useState('');
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<'tiers' | 'stages' | 'programs' | 'cta' | 'duplicates'>('tiers');
+  const [tab, setTab] = useState<'tiers' | 'stages' | 'cta' | 'duplicates'>('tiers');
   const [ctas, setCtas] = useState<NewsletterCta[]>([]);
   const emptyCta = { name: '', price_display: '', description: '', button_label: 'Sign up', signup_url: '' };
   const [newCta, setNewCta] = useState(emptyCta);
@@ -148,7 +147,6 @@ export default function SettingsPage() {
             <div className="seg">
               <button className={tab === 'tiers' ? 'active' : ''} onClick={() => setTab('tiers')}>Pricing tiers</button>
               <button className={tab === 'stages' ? 'active' : ''} onClick={() => setTab('stages')}>Pipeline stages</button>
-              <button className={tab === 'programs' ? 'active' : ''} onClick={() => setTab('programs')}>Programs</button>
               <button className={tab === 'cta' ? 'active' : ''} onClick={() => setTab('cta')}>Sign-up CTA</button>
               <button className={tab === 'duplicates' ? 'active' : ''} onClick={() => setTab('duplicates')}>
                 Duplicates{dupes.length > 0 ? ` (${dupes.length})` : ''}
@@ -213,9 +211,6 @@ export default function SettingsPage() {
             </form>
           </div>
           )}
-
-          {/* ---- Programs ---- */}
-          {tab === 'programs' && <ProgramsAdmin />}
 
           {/* ---- Newsletter sign-up CTAs ---- */}
           {tab === 'cta' && (
