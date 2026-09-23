@@ -159,7 +159,6 @@ export default function ProgramsAdmin() {
         <div className="program-editor-head">
           <label className="pe-toggle"><input type="checkbox" checked={p.published} onChange={(e) => patch(idx, 'published', e.target.checked)} /> Published</label>
           <label className="pe-toggle"><input type="checkbox" checked={p.featured} onChange={(e) => patch(idx, 'featured', e.target.checked)} /> Featured (&ldquo;Most Popular&rdquo;)</label>
-          <label className="pe-toggle"><input type="checkbox" checked={p.one_off} onChange={(e) => patch(idx, 'one_off', e.target.checked)} /> One-off (At the Gym / At Home)</label>
         </div>
 
           <div className="pe-grid">
@@ -194,17 +193,8 @@ export default function ProgramsAdmin() {
           <div className="field"><label>&ldquo;What this is&rdquo; (long description on the package page)</label>
             <textarea rows={4} className="crm-search" value={p.description} onChange={(e) => patch(idx, 'description', e.target.value)} placeholder="A paragraph describing the package, shown when a client clicks in." style={{ resize: 'vertical' }} /></div>
 
-          {p.one_off ? (
-            <div className="pe-grid">
-              <div className="field"><label>At the Gym sign-up link</label>
-                <input className="crm-search" value={p.ptd_url_gym} onChange={(e) => patch(idx, 'ptd_url_gym', e.target.value)} placeholder="https://…  PT Distinction (Box Gym)" /></div>
-              <div className="field"><label>At Home sign-up link</label>
-                <input className="crm-search" value={p.ptd_url_home} onChange={(e) => patch(idx, 'ptd_url_home', e.target.value)} placeholder="https://…  PT Distinction (At Home)" /></div>
-            </div>
-          ) : (
-            <div className="field"><label>PT Distinction sign-up link</label>
-              <input className="crm-search" value={p.ptd_url} onChange={(e) => patch(idx, 'ptd_url', e.target.value)} placeholder="https://…  (blank routes to the contact page)" /></div>
-          )}
+          <div className="field"><label>PT Distinction sign-up link</label>
+            <input className="crm-search" value={p.ptd_url} onChange={(e) => patch(idx, 'ptd_url', e.target.value)} placeholder="https://…  (blank routes to the contact page)" /></div>
 
           <div className="pe-grid">
             <div className="field"><label>Button label (optional)</label>
