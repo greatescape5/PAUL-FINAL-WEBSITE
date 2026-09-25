@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getPublishedPrograms } from '@/lib/programs-server';
+import ProgramsTabs from './ProgramsTabs';
 
 // Re-read program edits from the DB without a redeploy.
 export const revalidate = 60;
@@ -37,39 +38,7 @@ export default async function ProgramsPage() {
 
       <section className="section band-pale">
         <div className="container">
-          {programs.length === 0 ? (
-            <div className="empty-note">Programs are coming soon — check back shortly.</div>
-          ) : (
-            <div className="program-grid">
-              {programs.map((p) => (
-                <div key={p.slug} className={`program-card${p.featured ? ' featured' : ''}`}>
-                  {p.featured && <span className="program-flag">Most Popular</span>}
-                  <div
-                    className="program-cover"
-                    style={{ ['--cover' as string]: `url('${p.coverImage}')` }}
-                    role="img"
-                    aria-label={p.name}
-                  />
-                  <div className="program-body">
-                    <h3>{p.name}</h3>
-                    <p className="program-tagline">{p.tagline}</p>
-                    <div className="program-price">
-                      <span className="amount">{p.priceDisplay}</span>
-                    </div>
-                    <p className="program-terms">{p.termOptions}</p>
-                    <ul className="feature-list">
-                      {p.features.map((f, i) => (
-                        <li key={i} className={f.trim().endsWith('plus:') ? 'feature-lead' : ''}>{f}</li>
-                      ))}
-                    </ul>
-                    <div className="program-actions">
-                      <Link href={`/programs/${p.slug}`} className="btn btn-primary">View Program</Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ProgramsTabs programs={programs} />
         </div>
       </section>
 

@@ -502,6 +502,16 @@ input:focus, select:focus, textarea:focus {
   background: var(--red); color: #fff; font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 12px; border-radius: 999px;
 }
+/* Recurring / one-off tabs on the programs page. */
+.program-tabs { display: inline-flex; gap: 6px; padding: 5px; background: var(--lavender); border-radius: 12px; }
+.program-tabs button {
+  border: none; background: none; padding: 10px 26px; border-radius: 9px; cursor: pointer;
+  font-family: inherit; font-weight: 600; font-size: 1rem; color: var(--text-secondary);
+}
+.program-tabs button:hover { color: var(--blue-deep); }
+.program-tabs button.active { background: #fff; color: var(--blue-deep); box-shadow: 0 2px 6px rgba(38, 56, 82, 0.12); }
+.program-tabs-note { color: var(--text-secondary); margin: 14px 0 34px; font-size: 0.98rem; }
+
 .program-cover { height: 176px; background: var(--blue-mist) var(--cover, none) center / cover no-repeat; }
 .program-detail-cover { height: 300px; border-radius: 14px; background: var(--blue-mist) var(--cover, none) center / cover no-repeat; box-shadow: var(--shadow); }
 .program-body { padding: 24px 24px 26px; display: flex; flex-direction: column; flex: 1; }
