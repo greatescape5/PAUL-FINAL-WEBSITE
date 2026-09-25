@@ -24,6 +24,10 @@ export default function ProgramsAdmin() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !editingId) return;
+    if (file.size > 8 * 1024 * 1024) {
+      alert('That image is over 8 MB. Please choose one up to 8 MB.');
+      return;
+    }
     setCoverUploading(true);
     try {
       const url = await uploadProgramImage(file);
@@ -232,7 +236,7 @@ export default function ProgramsAdmin() {
                   {p.cover_image && (
                     <button type="button" className="action-btn" style={{ padding: '6px 10px' }} onClick={() => patch(idx, 'cover_image', '')}>Clear</button>
                   )}
-                  <span className="nl-hint" style={{ margin: 0 }}>Recommended: <strong>1200 × 800px</strong> landscape (3:2), PNG or JPG, under ~1&nbsp;MB.</span>
+                  <span className="nl-hint" style={{ margin: 0 }}>Recommended: <strong>1200 × 800px</strong> landscape (3:2), PNG or JPG, up to 8&nbsp;MB.</span>
                 </div>
                 <input ref={coverFileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPickCover} />
               </div>
