@@ -38,8 +38,8 @@ export default function ProgramsTabs({ programs }: { programs: Program[] }) {
   const recurring = programs.filter((p) => !p.oneOff);
   const oneOff = programs.filter((p) => p.oneOff);
 
-  // Show a tab only if it has programs; default to whichever exists.
-  const [tab, setTab] = useState<'recurring' | 'oneoff'>(recurring.length ? 'recurring' : 'oneoff');
+  // Lead with one-off (lower-commitment entry points); fall back if none exist.
+  const [tab, setTab] = useState<'recurring' | 'oneoff'>(oneOff.length ? 'oneoff' : 'recurring');
 
   const list = tab === 'recurring' ? recurring : oneOff;
 
@@ -51,14 +51,14 @@ export default function ProgramsTabs({ programs }: { programs: Program[] }) {
     <>
       <div style={{ textAlign: 'center' }}>
         <div className="program-tabs" role="tablist">
-          {recurring.length > 0 && (
-            <button role="tab" aria-selected={tab === 'recurring'} className={tab === 'recurring' ? 'active' : ''} onClick={() => setTab('recurring')}>
-              Recurring
-            </button>
-          )}
           {oneOff.length > 0 && (
             <button role="tab" aria-selected={tab === 'oneoff'} className={tab === 'oneoff' ? 'active' : ''} onClick={() => setTab('oneoff')}>
               One-off
+            </button>
+          )}
+          {recurring.length > 0 && (
+            <button role="tab" aria-selected={tab === 'recurring'} className={tab === 'recurring' ? 'active' : ''} onClick={() => setTab('recurring')}>
+              Recurring
             </button>
           )}
         </div>
