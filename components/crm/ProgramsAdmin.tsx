@@ -10,6 +10,42 @@ function slugify(s: string) {
   return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'program';
 }
 
+// A feature that ends with "plus:" renders on the site as a bold, inset lead
+// line with no bullet (e.g. "Everything in Starter, plus:").
+function isLead(f: string) {
+  return f.trim().toLowerCase().endsWith('plus:');
+}
+
+// Mirrors the public program card so the admin sees exactly what will render.
+function ProgramCardPreview({ p }: { p: ProgramRow }) {
+  const feats = p.features.filter((f) => f.trim());
+  return (
+    <div className={`program-card${p.featured ? ' featured' : ''}`}>
+      {p.featured && <span className="program-flag">Most Popular</span>}
+      <div
+        className="program-cover"
+        style={{ ['--cover' as string]: p.cover_image ? `url('${p.cover_image}')` : 'none' }}
+        role="img"
+        aria-label={p.name}
+      />
+      <div className="program-body">
+        <h3>{p.name || 'Program name'}</h3>
+        <p className="program-tagline">{p.tagline || 'Short description'}</p>
+        <div className="program-price"><span className="amount">{p.price_display || '$—'}</span></div>
+        <p className="program-terms">{p.term_options || ' '}</p>
+        <ul className="feature-list">
+          {feats.length === 0
+            ? <li style={{ opacity: 0.5 }}>Bullet points appear here</li>
+            : feats.map((f, i) => <li key={i} className={isLead(f) ? 'feature-lead' : ''}>{f}</li>)}
+        </ul>
+        <div className="program-actions">
+          <span className="btn btn-primary">View Program</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProgramsAdmin() {
   const [programs, setPrograms] = useState<ProgramRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,8 +165,28 @@ export default function ProgramsAdmin() {
 
   const editIdx = programs.findIndex((p) => p.id === editingId);
 
+  const renderTiles = (items: ProgramRow[]) => (
+    <div className="pe-tiles">
+      {items.map((p) => (
+        <button key={p.id} className="pe-tile" onClick={() => setEditingId(p.id)}>
+          <div className="pe-tile-badges">
+            {!p.published && <span className="pe-badge off">Draft</span>}
+            {p.featured && <span className="pe-badge feat">Featured</span>}
+          </div>
+          <div className="pe-tile-name">{p.name || 'Untitled program'}</div>
+          {p.tagline && <div className="pe-tile-tag">{p.tagline}</div>}
+          <div className="pe-tile-meta">
+            {p.price_display || 'No price'}{p.term_options ? ` · ${p.term_options}` : ''}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   // ---- Grid of tiles ----
   if (editIdx < 0) {
+    const oneOff = programs.filter((p) => p.one_off);
+    const recurring = programs.filter((p) => !p.one_off);
     return (
       <>
         <div className="crm-toolbar" style={{ marginBottom: 14 }}>
@@ -145,21 +201,12 @@ export default function ProgramsAdmin() {
         {programs.length === 0 ? (
           <div className="crm-card"><p style={{ color: 'var(--crm-ink-soft)', padding: '16px 18px', margin: 0 }}>No programs yet. Add your first above.</p></div>
         ) : (
-          <div className="pe-tiles">
-            {programs.map((p) => (
-              <button key={p.id} className="pe-tile" onClick={() => setEditingId(p.id)}>
-                <div className="pe-tile-badges">
-                  {!p.published && <span className="pe-badge off">Draft</span>}
-                  {p.featured && <span className="pe-badge feat">Featured</span>}
-                </div>
-                <div className="pe-tile-name">{p.name || 'Untitled program'}</div>
-                {p.tagline && <div className="pe-tile-tag">{p.tagline}</div>}
-                <div className="pe-tile-meta">
-                  {p.price_display || 'No price'}{p.term_options ? ` · ${p.term_options}` : ''}
-                </div>
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="crm-group-title" style={{ marginTop: 0 }}>One-off <span className="count">{oneOff.length}</span></div>
+            {oneOff.length ? renderTiles(oneOff) : <p className="pe-group-empty">No one-off programs.</p>}
+            <div className="crm-group-title">Recurring <span className="count">{recurring.length}</span></div>
+            {recurring.length ? renderTiles(recurring) : <p className="pe-group-empty">No recurring plans.</p>}
+          </>
         )}
       </>
     );
@@ -177,10 +224,12 @@ export default function ProgramsAdmin() {
         <button className="action-btn" style={{ padding: '6px 10px' }} disabled={idx === programs.length - 1} onClick={() => move(idx, 1)}>↓ Move down</button>
       </div>
 
-      <div className="crm-card program-editor" style={{ padding: '18px 22px', maxWidth: 760 }}>
+      <div className="program-editor-layout">
+      <div className="crm-card program-editor" style={{ padding: '18px 22px' }}>
         <div className="program-editor-head">
           <label className="pe-toggle"><input type="checkbox" checked={p.published} onChange={(e) => patch(idx, 'published', e.target.checked)} /> Published</label>
           <label className="pe-toggle"><input type="checkbox" checked={p.featured} onChange={(e) => patch(idx, 'featured', e.target.checked)} /> Featured (&ldquo;Most Popular&rdquo;)</label>
+          <label className="pe-toggle"><input type="checkbox" checked={p.one_off} onChange={(e) => patch(idx, 'one_off', e.target.checked)} /> One-time purchase (one-off)</label>
         </div>
 
           <div className="pe-grid">
@@ -203,12 +252,28 @@ export default function ProgramsAdmin() {
             <input className="crm-search" value={p.price_note} onChange={(e) => patch(idx, 'price_note', e.target.value)} placeholder="e.g. billed monthly" /></div>
 
           <div className="field"><label>Bullet points (what&rsquo;s included)</label>
-            {p.features.map((f, fi) => (
-              <div key={fi} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                <input className="crm-search" value={f} onChange={(e) => setFeature(idx, fi, e.target.value)} placeholder="Bullet point" style={{ flex: 1 }} />
-                <button className="action-btn" style={{ padding: '6px 10px' }} title="Remove" onClick={() => removeFeature(idx, fi)}>×</button>
-              </div>
-            ))}
+            <p className="pe-lead-tip">
+              Tip: end a line with <code>plus:</code> (e.g. &ldquo;Everything in Starter, plus:&rdquo;) and it shows as a
+              <strong> bold header, inset with no bullet</strong> &mdash; a section divider, not a checklist item.
+            </p>
+            {p.features.map((f, fi) => {
+              const lead = isLead(f);
+              return (
+                <div key={fi} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      className="crm-search"
+                      value={f}
+                      onChange={(e) => setFeature(idx, fi, e.target.value)}
+                      placeholder="Bullet point"
+                      style={{ flex: 1, fontWeight: lead ? 700 : undefined }}
+                    />
+                    {lead && <span className="pe-lead-flag">Bold header · no bullet</span>}
+                    <button className="action-btn" style={{ padding: '6px 10px' }} title="Remove" onClick={() => removeFeature(idx, fi)}>×</button>
+                  </div>
+                </div>
+              );
+            })}
             <button className="action-btn" style={{ marginTop: 4 }} onClick={() => addFeature(idx)}>+ Add bullet</button>
           </div>
 
@@ -251,6 +316,15 @@ export default function ProgramsAdmin() {
             <div style={{ flex: 1 }} />
             <button className="action-btn" onClick={() => remove(p)}>Delete</button>
           </div>
+      </div>
+
+      <aside className="program-preview">
+        <div className="pe-preview-label">Live preview</div>
+        <div className="pe-preview-card">
+          <ProgramCardPreview p={p} />
+        </div>
+        <p className="pe-preview-hint">How this package&rsquo;s card looks on the site. Updates as you type.</p>
+      </aside>
       </div>
     </>
   );

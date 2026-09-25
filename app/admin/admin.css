@@ -342,3 +342,25 @@
   display: flex; align-items: center; justify-content: center;
   color: var(--crm-ink-mute); font-size: 0.82rem;
 }
+
+/* Program editor + live preview, side by side */
+.program-editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: start; }
+.program-editor-layout > .program-editor { min-width: 0; }
+.program-preview { position: sticky; top: 12px; }
+.pe-preview-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--crm-ink-mute); margin-bottom: 8px; }
+.pe-preview-card { width: 300px; max-width: 100%; }
+.pe-preview-hint { font-size: 0.82rem; color: var(--crm-ink-mute); margin: 12px 0 0; }
+/* The preview borrows the public card styles; keep buttons inert there. */
+.program-preview .btn { cursor: default; }
+.pe-group-empty { color: var(--crm-ink-mute); font-size: 0.92rem; margin: 0 0 8px; }
+
+/* "plus:" lead-line markers in the bullet editor */
+.pe-lead-tip { font-size: 0.85rem; color: var(--crm-ink-soft); background: #f4f6f9; border: 1px solid var(--crm-border); border-radius: 8px; padding: 9px 12px; margin: 0 0 12px; line-height: 1.5; }
+.pe-lead-tip code { background: #e6ebf2; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+.pe-lead-flag { flex: 0 0 auto; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--blue-deep); background: var(--blue-soft); padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+
+@media (max-width: 1100px) {
+  .program-editor-layout { grid-template-columns: 1fr; }
+  .program-preview { position: static; }
+  .pe-preview-card { width: 300px; }
+}
