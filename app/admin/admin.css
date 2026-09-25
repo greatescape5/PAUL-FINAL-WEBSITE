@@ -331,3 +331,14 @@
 .pe-tile-name { font-size: 1.05rem; font-weight: 700; color: var(--crm-ink); }
 .pe-tile-tag { font-size: 0.88rem; color: var(--crm-ink-soft); }
 .pe-tile-meta { margin-top: auto; font-size: 0.85rem; color: var(--crm-ink-mute); font-weight: 600; }
+
+/* Program cover upload row */
+.pe-cover-row { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.pe-cover-thumb {
+  width: 132px; height: 88px; object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--crm-border); background: #eef2f7; flex: 0 0 auto;
+}
+.pe-cover-thumb.empty {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--crm-ink-mute); font-size: 0.82rem;
+}

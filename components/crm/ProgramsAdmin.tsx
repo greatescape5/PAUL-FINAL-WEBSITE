@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  getProgramsAdmin, createProgram, updateProgram, deleteProgram,
+  getProgramsAdmin, createProgram, updateProgram, deleteProgram, uploadProgramImage,
   type ProgramRow,
 } from '@/lib/crm';
 
@@ -17,6 +17,24 @@ export default function ProgramsAdmin() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileRef = useRef<HTMLInputElement>(null);
+
+  async function onPickCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !editingId) return;
+    setCoverUploading(true);
+    try {
+      const url = await uploadProgramImage(file);
+      setPrograms((prev) => prev.map((p) => (p.id === editingId ? { ...p, cover_image: url } : p)));
+      setSavedId(null);
+    } catch (err: any) {
+      alert(err?.message ?? 'Upload failed');
+    } finally {
+      setCoverUploading(false);
+    }
+  }
 
   const load = useCallback(async () => {
     try { setPrograms(await getProgramsAdmin()); }
@@ -196,11 +214,29 @@ export default function ProgramsAdmin() {
           <div className="field"><label>PT Distinction sign-up link</label>
             <input className="crm-search" value={p.ptd_url} onChange={(e) => patch(idx, 'ptd_url', e.target.value)} placeholder="https://…  (blank routes to the contact page)" /></div>
 
-          <div className="pe-grid">
-            <div className="field"><label>Button label (optional)</label>
-              <input className="crm-search" value={p.cta_label} onChange={(e) => patch(idx, 'cta_label', e.target.value)} placeholder="Defaults to “Get Started with …”" /></div>
-            <div className="field"><label>Cover image path (optional)</label>
-              <input className="crm-search" value={p.cover_image} onChange={(e) => patch(idx, 'cover_image', e.target.value)} placeholder="/photos/coaching.png" /></div>
+          <div className="field"><label>Button label (optional)</label>
+            <input className="crm-search" value={p.cta_label} onChange={(e) => patch(idx, 'cta_label', e.target.value)} placeholder="Defaults to “Get Started with …”" /></div>
+
+          <div className="field">
+            <label>Cover image</label>
+            <div className="pe-cover-row">
+              {p.cover_image
+                ? <img src={p.cover_image} alt="" className="pe-cover-thumb" />
+                : <div className="pe-cover-thumb empty">No image</div>}
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <input className="crm-search" value={p.cover_image} onChange={(e) => patch(idx, 'cover_image', e.target.value)} placeholder="/photos/coaching.png or an uploaded image URL" />
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                  <button type="button" className="action-btn" onClick={() => coverFileRef.current?.click()} disabled={coverUploading}>
+                    {coverUploading ? 'Uploading…' : 'Upload image'}
+                  </button>
+                  {p.cover_image && (
+                    <button type="button" className="action-btn" style={{ padding: '6px 10px' }} onClick={() => patch(idx, 'cover_image', '')}>Clear</button>
+                  )}
+                  <span className="nl-hint" style={{ margin: 0 }}>Recommended: <strong>1200 × 800px</strong> landscape (3:2), PNG or JPG, under ~1&nbsp;MB.</span>
+                </div>
+                <input ref={coverFileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onPickCover} />
+              </div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>

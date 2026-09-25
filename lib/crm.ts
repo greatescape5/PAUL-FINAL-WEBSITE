@@ -633,6 +633,18 @@ export async function uploadNewsletterImage(file: File) {
   return data.publicUrl
 }
 
+/** Uploads a program cover image to the public bucket, returns its public URL. */
+export async function uploadProgramImage(file: File) {
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
+  const path = `programs/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage.from('newsletter').upload(path, file, {
+    cacheControl: '31536000', contentType: file.type || undefined, upsert: false,
+  })
+  if (error) throw error
+  const { data } = supabase.storage.from('newsletter').getPublicUrl(path)
+  return data.publicUrl
+}
+
 /** Sends the composed newsletter to all subscribed contacts (via the server). */
 export async function sendNewsletter(subject: string, html: string, ctaId: string | null = null): Promise<{ sent: number }> {
   const { data: { session } } = await supabase.auth.getSession()
