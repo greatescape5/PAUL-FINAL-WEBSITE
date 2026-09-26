@@ -417,23 +417,5 @@
 }
 .add-sub-menu button:hover { background: var(--blue-soft); }
 
-/* App-like: the CRM chrome (labels, badges, values, headings) isn't
-   selectable, so it shows a normal cursor instead of the text I-beam. Form
-   fields, the newsletter editor, and the data you'd actually copy (names,
-   emails, phone, notes, recipient lists) stay selectable. */
-.crm-app {
-  -webkit-user-select: none;
-  user-select: none;
-}
-.crm-app input,
-.crm-app textarea,
-.crm-app select,
-.crm-app [contenteditable],
-.crm-app .nm,
-.crm-app .contact-meta,
-.crm-app .tl-text,
-.crm-app .nl-recipients,
-.crm-app .import-preview {
-  -webkit-user-select: text;
-  user-select: text;
-}
+/* Text selection is disabled globally (see globals.css); no CRM-specific
+   overrides needed — inputs, textareas, and the editor stay selectable. */
