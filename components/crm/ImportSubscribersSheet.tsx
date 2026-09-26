@@ -130,6 +130,25 @@ export default function ImportSubscribersSheet({
               </div>
             </div>
 
+            {rows.length > 0 && (
+              <div className="field">
+                <label>Detected columns (first {Math.min(rows.length, 5)} of {rows.length})</label>
+                <div className="import-preview">
+                  <table>
+                    <thead><tr><th>Email</th><th>Name</th></tr></thead>
+                    <tbody>
+                      {rows.slice(0, 5).map((r, i) => (
+                        <tr key={i}>
+                          <td>{r.email}</td>
+                          <td>{r.name || <span style={{ color: 'var(--crm-ink-mute)' }}>—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="sheet-actions">
               <button className="ghost" onClick={onClose}>Cancel</button>
               <button className="go" disabled={busy || rows.length === 0 || !group.trim()} onClick={doImport}>
