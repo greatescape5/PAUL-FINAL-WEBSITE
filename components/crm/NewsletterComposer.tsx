@@ -58,6 +58,21 @@ export default function NewsletterComposer({
     exec('createLink', url);
   }
 
+  // Email can't play video inline, so a "video" is a clickable thumbnail (for
+  // YouTube) or a Watch button that opens the link.
+  function insertVideo() {
+    const raw = prompt('Paste a video link (YouTube, Vimeo, or any URL). It becomes a clickable button/thumbnail — email can’t play video inline.');
+    const url = raw?.trim();
+    if (!url) return;
+    const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
+    const html = yt
+      ? `<a href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:#456a92;">`
+        + `<img src="https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg" alt="Watch the video" style="max-width:100%;border-radius:8px;display:block;margin:10px 0 6px;" />`
+        + `<span style="font-weight:700;">▶ Watch the video</span></a>`
+      : `<a href="${url}" target="_blank" rel="noopener" style="display:inline-block;background:#b51f21;color:#ffffff;padding:12px 22px;border-radius:8px;font-weight:700;text-decoration:none;margin:10px 0;">▶ Watch the video</a>`;
+    exec('insertHTML', html + '<p><br></p>');
+  }
+
   async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -141,10 +156,11 @@ export default function NewsletterComposer({
             onClick={() => fileRef.current?.click()} disabled={uploading}>
             {uploading ? 'Uploading…' : 'Image'}
           </button>
+          {btn('Video', insertVideo, 'Insert a video link (clickable thumbnail/button)')}
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickImage} />
         </div>
         <div ref={editorRef} className="nl-editor nl-content" contentEditable suppressContentEditableWarning />
-        <p className="nl-hint">Wrapped in the Flow Motion template (logo, brand colors, unsubscribe link) when it sends.</p>
+        <p className="nl-hint">Wrapped in the Flow Motion template (logo, brand colors, unsubscribe link) when it sends. Video inserts a clickable thumbnail/button (email can’t play video inline).</p>
       </div>
 
       <div className="nl-cta-toggle">
