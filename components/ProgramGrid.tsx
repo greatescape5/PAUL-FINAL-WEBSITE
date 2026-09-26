@@ -23,7 +23,7 @@ export default function ProgramGrid({
             aria-label={p.name}
           />
           <div className="program-body">
-            <h3>{p.name}</h3>
+            <h3><Link href={`/programs/${p.slug}`} className="program-title-link">{p.name}</Link></h3>
             <p className="program-tagline">{p.tagline}</p>
             <div className="program-price">
               <span className="amount">{p.priceDisplay}</span>
