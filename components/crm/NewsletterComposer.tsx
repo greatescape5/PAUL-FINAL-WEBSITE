@@ -8,9 +8,12 @@ import { sendNewsletter, uploadNewsletterImage, getNewsletterCtas, type Newslett
 // but universally supported) — plenty for a single-author internal tool. The
 // server sanitizes + style-inlines the HTML before it goes out.
 export default function NewsletterComposer({
-  recipientCount, onSent,
+  totalActive, groups, groupCounts, initialGroup = 'all', onSent,
 }: {
-  recipientCount: number;
+  totalActive: number;
+  groups: string[];
+  groupCounts: Record<string, number>;
+  initialGroup?: string;
   onSent: (sent: number) => void;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -21,12 +24,14 @@ export default function NewsletterComposer({
   const [err, setErr] = useState('');
   const [ctas, setCtas] = useState<NewsletterCta[]>([]);
   const [selectedCtaId, setSelectedCtaId] = useState<string | null>(null);
+  const [group, setGroup] = useState<string>(initialGroup);
 
   useEffect(() => {
     getNewsletterCtas().then(setCtas).catch(() => {});
   }, []);
 
   const selectedCta = ctas.find((c) => c.id === selectedCtaId) ?? null;
+  const recipientCount = group === 'all' ? totalActive : (groupCounts[group] ?? 0);
 
   function exec(cmd: string, value?: string) {
     editorRef.current?.focus();
@@ -61,11 +66,12 @@ export default function NewsletterComposer({
       setErr('Add a subject and some content first.');
       return;
     }
-    if (!confirm(`Send "${subject.trim()}" to ${recipientCount} subscriber${recipientCount === 1 ? '' : 's'}?`)) return;
+    const target = group === 'all' ? 'all subscribers' : `the "${group}" group`;
+    if (!confirm(`Send "${subject.trim()}" to ${recipientCount} subscriber${recipientCount === 1 ? '' : 's'} in ${target}?`)) return;
     setSending(true);
     setErr('');
     try {
-      const { sent } = await sendNewsletter(subject.trim(), html, selectedCtaId);
+      const { sent } = await sendNewsletter(subject.trim(), html, selectedCtaId, group === 'all' ? null : group);
       setSubject('');
       if (editorRef.current) editorRef.current.innerHTML = '';
       onSent(sent);
@@ -83,6 +89,14 @@ export default function NewsletterComposer({
 
   return (
     <div className="nl-composer">
+      <div className="field">
+        <label>Send to</label>
+        <select value={group} onChange={(e) => setGroup(e.target.value)}>
+          <option value="all">All subscribers ({totalActive})</option>
+          {groups.map((g) => <option key={g} value={g}>{g} ({groupCounts[g] ?? 0})</option>)}
+        </select>
+      </div>
+
       <div className="field">
         <label>Subject</label>
         <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. March check-in: spring reset" />

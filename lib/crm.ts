@@ -517,6 +517,7 @@ export interface Subscriber {
   email: string
   name: string | null
   source: string
+  group_name: string
   status: 'subscribed' | 'unsubscribed'
   source_detail: Record<string, unknown> | null
   created_at: string
@@ -645,14 +646,17 @@ export async function uploadProgramImage(file: File) {
   return data.publicUrl
 }
 
-/** Sends the composed newsletter to all subscribed contacts (via the server). */
-export async function sendNewsletter(subject: string, html: string, ctaId: string | null = null): Promise<{ sent: number }> {
+/** Sends the composed newsletter to subscribed contacts (via the server).
+ *  Pass a group to target only that group; null sends to everyone subscribed. */
+export async function sendNewsletter(
+  subject: string, html: string, ctaId: string | null = null, group: string | null = null,
+): Promise<{ sent: number }> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Your session expired — sign in again.')
   const res = await fetch('/api/newsletter/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({ subject, html, ctaId }),
+    body: JSON.stringify({ subject, html, ctaId, group }),
   })
   const out = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(out?.error || 'Send failed')
@@ -678,6 +682,56 @@ export async function setSubscriberStatus(id: string, status: 'subscribed' | 'un
 export async function deleteSubscriber(id: string) {
   const { error } = await supabase.from('subscribers').delete().eq('id', id)
   if (error) throw error
+}
+
+/** Moves a subscriber to a different group. */
+export async function updateSubscriberGroup(id: string, group: string) {
+  const { error } = await supabase.from('subscribers').update({ group_name: group }).eq('id', id)
+  if (error) throw error
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Bulk-adds subscribers from a parsed CSV into a group. Skips existing emails
+ *  (by lowercase match) and invalid ones. Runs as the authenticated admin. */
+export async function importSubscribers(
+  entries: { email: string; name?: string }[],
+  group: string,
+): Promise<{ added: number; skipped: number; invalid: number }> {
+  const seen = new Set<string>()
+  const clean: { email: string; name: string | null }[] = []
+  let invalid = 0
+  for (const e of entries) {
+    const email = (e.email || '').trim().toLowerCase()
+    if (!EMAIL_RE.test(email)) { invalid++; continue }
+    if (seen.has(email)) continue
+    seen.add(email)
+    clean.push({ email, name: e.name?.trim() || null })
+  }
+  if (clean.length === 0) return { added: 0, skipped: 0, invalid }
+
+  // Which of these already exist?
+  const existing = new Set<string>()
+  const emails = clean.map((c) => c.email)
+  for (let i = 0; i < emails.length; i += 300) {
+    const chunk = emails.slice(i, i + 300)
+    const { data, error } = await supabase.from('subscribers').select('email').in('email', chunk)
+    if (error) throw error
+    for (const r of data ?? []) existing.add(String(r.email).toLowerCase())
+  }
+
+  const toInsert = clean
+    .filter((c) => !existing.has(c.email))
+    .map((c) => ({ email: c.email, name: c.name, source: 'csv', group_name: group, status: 'subscribed' }))
+
+  let added = 0
+  for (let i = 0; i < toInsert.length; i += 300) {
+    const chunk = toInsert.slice(i, i + 300)
+    const { error } = await supabase.from('subscribers').insert(chunk)
+    if (error) throw error
+    added += chunk.length
+  }
+  return { added, skipped: clean.length - toInsert.length, invalid }
 }
 
 export async function getBillingContacts() {

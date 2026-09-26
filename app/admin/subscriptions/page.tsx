@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CrmShell from '@/components/crm/CrmShell';
 import NewsletterComposer from '@/components/crm/NewsletterComposer';
+import ImportSubscribersSheet from '@/components/crm/ImportSubscribersSheet';
 import {
-  getSubscribers, setSubscriberStatus, deleteSubscriber, getBroadcasts,
+  getSubscribers, setSubscriberStatus, deleteSubscriber, updateSubscriberGroup, getBroadcasts,
   type Subscriber, type Broadcast,
 } from '@/lib/crm';
 
@@ -39,10 +40,11 @@ function toCsv(rows: Subscriber[]): string {
     const s = v == null ? '' : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const header = ['Email', 'Name', 'Source', 'Signed up on page', 'Status', 'Date'];
+  const header = ['Email', 'Name', 'Group', 'Source', 'Signed up on page', 'Status', 'Date'];
   const lines = rows.map((r) => [
     esc(r.email),
     esc(r.name ?? ''),
+    esc(r.group_name),
     esc(sourceLabel(r.source)),
     esc(landingPage(r) ?? ''),
     esc(r.status),
@@ -58,6 +60,8 @@ export default function SubscriptionsPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [groupFilter, setGroupFilter] = useState<string>('all');
   const [viewing, setViewing] = useState<Broadcast | null>(null);
 
   const load = useCallback(async () => {
@@ -74,11 +78,29 @@ export default function SubscriptionsPage() {
   useEffect(() => { load(); loadBroadcasts(); }, [load, loadBroadcasts]);
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return rows;
-    return rows.filter((r) => r.status === filter);
-  }, [rows, filter]);
+    return rows.filter((r) =>
+      (filter === 'all' || r.status === filter) &&
+      (groupFilter === 'all' || r.group_name === groupFilter),
+    );
+  }, [rows, filter, groupFilter]);
 
   const activeCount = useMemo(() => rows.filter((r) => r.status === 'subscribed').length, [rows]);
+
+  // Distinct groups + how many subscribed in each (for the filter + composer).
+  const groups = useMemo(() => [...new Set(rows.map((r) => r.group_name))].sort(), [rows]);
+  const groupCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of rows) if (r.status === 'subscribed') m[r.group_name] = (m[r.group_name] ?? 0) + 1;
+    return m;
+  }, [rows]);
+
+  async function moveGroup(sub: Subscriber, group: string) {
+    if (group === sub.group_name) return;
+    setBusyId(sub.id);
+    try { await updateSubscriberGroup(sub.id, group); await load(); }
+    catch (e: any) { alert(e?.message ?? 'Could not move'); }
+    finally { setBusyId(null); }
+  }
 
   function exportCsv() {
     const csv = toCsv(filtered);
@@ -127,9 +149,17 @@ export default function SubscriptionsPage() {
           </span>
         ) : (
           <>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', color: 'var(--crm-ink-soft)' }}>
+              Group
+              <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} style={{ width: 'auto', padding: '8px 10px' }}>
+                <option value="all">All groups</option>
+                {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </label>
             <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
               {activeCount} subscribed · {rows.length} total
             </span>
+            <button className="action-btn" onClick={() => setImporting(true)}>Import CSV</button>
             <button className="action-btn" onClick={exportCsv} disabled={filtered.length === 0}>
               Export CSV
             </button>
@@ -144,7 +174,10 @@ export default function SubscriptionsPage() {
         <div className="crm-card" style={{ padding: '20px 22px', marginBottom: 20 }}>
           <div className="crm-group-title" style={{ marginTop: 0 }}>New newsletter</div>
           <NewsletterComposer
-            recipientCount={activeCount}
+            totalActive={activeCount}
+            groups={groups}
+            groupCounts={groupCounts}
+            initialGroup={groupFilter !== 'all' ? groupFilter : 'all'}
             onSent={(sent) => {
               setComposing(false);
               loadBroadcasts();
@@ -194,10 +227,20 @@ export default function SubscriptionsPage() {
                 <div className="grow">
                   <div className="nm">{s.email}</div>
                   <div className="meta">
+                    <span className="sub-group-tag">{s.group_name}</span>
                     {s.name ? `${s.name} · ` : ''}{sourceLabel(s.source)}
                     {lp ? ` · ${lp}` : ''}
                   </div>
                 </div>
+                <select
+                  className="sub-group-select"
+                  value={s.group_name}
+                  onChange={(e) => moveGroup(s, e.target.value)}
+                  disabled={busyId === s.id}
+                  title="Move to group"
+                >
+                  {[...new Set([...groups, s.group_name])].sort().map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
                 <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDate(s.created_at)}</div>
                 <button
                   className="action-btn"
@@ -212,6 +255,13 @@ export default function SubscriptionsPage() {
             );
           })}
         </div>
+      )}
+
+      {importing && (
+        <ImportSubscribersSheet
+          onClose={() => setImporting(false)}
+          onDone={() => { setImporting(false); load(); }}
+        />
       )}
 
       {viewing && (
