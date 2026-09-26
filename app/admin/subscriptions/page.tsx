@@ -64,6 +64,7 @@ export default function SubscriptionsPage() {
   const [composing, setComposing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Broadcast | null>(null);
 
   const load = useCallback(async () => {
@@ -154,6 +155,47 @@ export default function SubscriptionsPage() {
     finally { setBusyId(null); }
   }
 
+  function renderRow(s: Subscriber) {
+    const lp = landingPage(s);
+    return (
+      <div key={s.id} className="crm-row" style={{ cursor: 'default' }}>
+        <span
+          className="lc-badge"
+          style={{ background: s.status === 'subscribed' ? '#10b981' : 'var(--crm-ink-mute)' }}
+        >
+          {s.status === 'subscribed' ? 'Subscribed' : 'Unsubscribed'}
+        </span>
+        <div className="grow">
+          <div className="nm">{s.email}</div>
+          <div className="meta">
+            <span className="sub-group-tag">{s.group_name}</span>
+            {s.name ? `${s.name} · ` : ''}{sourceLabel(s.source)}
+            {lp ? ` · ${lp}` : ''}
+          </div>
+        </div>
+        <select
+          className="sub-group-select"
+          value={s.group_name}
+          onChange={(e) => moveGroup(s, e.target.value)}
+          disabled={busyId === s.id}
+          title="Move to group"
+        >
+          {[...new Set([...groups, s.group_name])].sort().map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+        <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDate(s.created_at)}</div>
+        <button
+          className="action-btn"
+          onClick={() => toggleStatus(s)}
+          disabled={busyId === s.id}
+          title={s.status === 'subscribed' ? 'Mark unsubscribed' : 'Re-subscribe'}
+        >
+          {s.status === 'subscribed' ? 'Unsubscribe' : 'Re-subscribe'}
+        </button>
+        <button className="action-btn" style={{ padding: '6px 10px' }} title="Delete" onClick={() => remove(s)} disabled={busyId === s.id}>×</button>
+      </div>
+    );
+  }
+
   return (
     <CrmShell title="Subscriptions">
       <div className="crm-toolbar">
@@ -162,7 +204,7 @@ export default function SubscriptionsPage() {
             ['all', 'All'], ['subscribed', 'Subscribed'], ['unsubscribed', 'Unsubscribed'],
             ['groups', 'Groups'], ['history', 'History'],
           ] as [Filter, string][]).map(([f, label]) => (
-            <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
+            <button key={f} className={filter === f ? 'active' : ''} onClick={() => { setFilter(f); setOpenGroup(null); }}>
               {label}
             </button>
           ))}
@@ -234,15 +276,41 @@ export default function SubscriptionsPage() {
           </div>
         )
       ) : filter === 'groups' ? (
-        <div className="pe-tiles">
-          <button className="pe-tile pe-tile-add" onClick={addGroup}>+ Add group</button>
-          {groups.map((g) => (
-            <button key={g} className="pe-tile" onClick={() => { setGroupFilter(g); setFilter('all'); }}>
-              <div className="pe-tile-name">{g}</div>
-              <div className="pe-tile-meta">{groupCounts[g] ?? 0} subscribed · {groupTotals[g] ?? 0} total</div>
-            </button>
-          ))}
-        </div>
+        openGroup ? (
+          (() => {
+            const members = rows.filter((r) => r.group_name === openGroup);
+            const subs = members.filter((r) => r.status === 'subscribed');
+            return (
+              <>
+                <div className="crm-toolbar" style={{ marginBottom: 14 }}>
+                  <button className="crm-back" onClick={() => setOpenGroup(null)} style={{ cursor: 'pointer', background: 'none', border: 'none' }}>← All groups</button>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem' }}>{openGroup}</h2>
+                  <div style={{ flex: 1 }} />
+                  <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
+                    {subs.length} subscribed · {members.length} total
+                  </span>
+                </div>
+                {members.length === 0 ? (
+                  <div className="crm-empty" style={{ padding: '50px 24px' }}>
+                    <p>No one in this group yet. Import a CSV into it, or move subscribers here.</p>
+                  </div>
+                ) : (
+                  <div className="crm-card">{members.map(renderRow)}</div>
+                )}
+              </>
+            );
+          })()
+        ) : (
+          <div className="pe-tiles">
+            <button className="pe-tile pe-tile-add" onClick={addGroup}>+ Add group</button>
+            {groups.map((g) => (
+              <button key={g} className="pe-tile" onClick={() => setOpenGroup(g)}>
+                <div className="pe-tile-name">{g}</div>
+                <div className="pe-tile-meta">{groupCounts[g] ?? 0} subscribed · {groupTotals[g] ?? 0} total</div>
+              </button>
+            ))}
+          </div>
+        )
       ) : loading ? (
         <div className="crm-loading">Loading…</div>
       ) : filtered.length === 0 ? (
@@ -251,46 +319,7 @@ export default function SubscriptionsPage() {
         </div>
       ) : (
         <div className="crm-card">
-          {filtered.map((s) => {
-            const lp = landingPage(s);
-            return (
-              <div key={s.id} className="crm-row" style={{ cursor: 'default' }}>
-                <span
-                  className="lc-badge"
-                  style={{ background: s.status === 'subscribed' ? '#10b981' : 'var(--crm-ink-mute)' }}
-                >
-                  {s.status === 'subscribed' ? 'Subscribed' : 'Unsubscribed'}
-                </span>
-                <div className="grow">
-                  <div className="nm">{s.email}</div>
-                  <div className="meta">
-                    <span className="sub-group-tag">{s.group_name}</span>
-                    {s.name ? `${s.name} · ` : ''}{sourceLabel(s.source)}
-                    {lp ? ` · ${lp}` : ''}
-                  </div>
-                </div>
-                <select
-                  className="sub-group-select"
-                  value={s.group_name}
-                  onChange={(e) => moveGroup(s, e.target.value)}
-                  disabled={busyId === s.id}
-                  title="Move to group"
-                >
-                  {[...new Set([...groups, s.group_name])].sort().map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
-                <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDate(s.created_at)}</div>
-                <button
-                  className="action-btn"
-                  onClick={() => toggleStatus(s)}
-                  disabled={busyId === s.id}
-                  title={s.status === 'subscribed' ? 'Mark unsubscribed' : 'Re-subscribe'}
-                >
-                  {s.status === 'subscribed' ? 'Unsubscribe' : 'Re-subscribe'}
-                </button>
-                <button className="action-btn" style={{ padding: '6px 10px' }} title="Delete" onClick={() => remove(s)} disabled={busyId === s.id}>×</button>
-              </div>
-            );
-          })}
+          {filtered.map(renderRow)}
         </div>
       )}
 
