@@ -38,7 +38,12 @@ function parseCsv(text: string): { email: string; name: string }[] {
     let email = emailIdx >= 0 ? (cells[emailIdx] || '') : '';
     if (!EMAIL_RE.test(email)) email = cells.find((c) => EMAIL_RE.test(c)) || '';
     let name = nameIdx >= 0 ? (cells[nameIdx] || '') : '';
-    if (!name) name = cells.find((c) => c && c !== email && !EMAIL_RE.test(c)) || '';
+    if (!name) {
+      // Prefer a cell that reads like a name (has letters) over a numeric one
+      // (e.g. a phone column), falling back to any non-email cell.
+      const other = (c: string) => c && c !== email && !EMAIL_RE.test(c);
+      name = cells.find((c) => other(c) && /[a-zA-Z]/.test(c)) || cells.find(other) || '';
+    }
     if (EMAIL_RE.test(email)) out.push({ email, name });
   }
   return out;
