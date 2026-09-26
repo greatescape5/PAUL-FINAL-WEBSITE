@@ -419,3 +419,7 @@
 
 /* Text selection is disabled globally (see globals.css); no CRM-specific
    overrides needed — inputs, textareas, and the editor stay selectable. */
+
+/* Destructive action button (theme red) */
+.action-btn.danger { background: var(--red); color: #fff; border-color: var(--red); }
+.action-btn.danger:hover { background: var(--red-deep); border-color: var(--red-deep); }

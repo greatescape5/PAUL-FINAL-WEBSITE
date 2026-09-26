@@ -8,7 +8,7 @@ import AddSubscriberSheet from '@/components/crm/AddSubscriberSheet';
 import CreateGroupSheet from '@/components/crm/CreateGroupSheet';
 import {
   getSubscribers, setSubscriberStatus, deleteSubscriber, updateSubscriberGroup, getBroadcasts,
-  getGroups,
+  getGroups, deleteGroup,
   type Subscriber, type Broadcast,
 } from '@/lib/crm';
 
@@ -83,6 +83,21 @@ export default function SubscriptionsPage() {
   const loadGroups = useCallback(async () => {
     try { setGroupDefs(await getGroups()); } catch { setGroupDefs([]); }
   }, []);
+
+  async function removeGroup(name: string) {
+    if (name === 'Website') { alert('The default “Website” group can’t be deleted.'); return; }
+    const members = rows.filter((r) => r.group_name === name).length;
+    const msg = members > 0
+      ? `Delete the “${name}” group? Its ${members} subscriber${members === 1 ? '' : 's'} will be moved to “Website”.`
+      : `Delete the “${name}” group?`;
+    if (!confirm(msg)) return;
+    try {
+      await deleteGroup(name);
+      setOpenGroup(null);
+      await loadGroups();
+      await load();
+    } catch (e: any) { alert(e?.message ?? 'Could not delete the group'); }
+  }
 
   const loadBroadcasts = useCallback(async () => {
     try { setBroadcasts(await getBroadcasts()); } catch { setBroadcasts([]); }
@@ -300,6 +315,9 @@ export default function SubscriptionsPage() {
                       </>
                     )}
                   </div>
+                  {openGroup !== 'Website' && (
+                    <button className="action-btn danger" onClick={() => removeGroup(openGroup)}>Delete group</button>
+                  )}
                 </div>
                 {members.length === 0 ? (
                   <div className="crm-empty" style={{ padding: '50px 24px' }}>

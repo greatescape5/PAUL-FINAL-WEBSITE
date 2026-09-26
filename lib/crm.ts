@@ -702,6 +702,16 @@ export async function createGroup(name: string) {
   if (error) throw error
 }
 
+/** Deletes a group: any members are moved to the default "Website" group first
+ *  (no subscribers are lost), then the group definition is removed. */
+export async function deleteGroup(name: string) {
+  const { error: e1 } = await supabase
+    .from('subscribers').update({ group_name: 'Website' }).eq('group_name', name)
+  if (e1) throw e1
+  const { error: e2 } = await supabase.from('subscriber_groups').delete().eq('name', name)
+  if (e2) throw e2
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Bulk-adds subscribers from a parsed CSV into a group. Skips existing emails
