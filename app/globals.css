@@ -634,3 +634,16 @@ input:focus, select:focus, textarea:focus {
   .nav-links a:last-child { border-bottom: none; }
   .nav-social { position: absolute; right: 64px; top: 26px; }
 }
+
+/* ---------- Cursor / selection on UI chrome ----------
+   Headings, nav/header, footer titles, buttons, and eyebrows are interface
+   labels, not content — so they don't show a text (I-beam) cursor or get
+   selected on click. Body copy (paragraphs, lists, links in content) stays
+   selectable so visitors can still copy things like an email or address. */
+h1, h2, h3, h4, h5, h6,
+.eyebrow, .eyebrow-red, .tag,
+.site-header, .site-footer h4,
+.btn, button {
+  -webkit-user-select: none;
+  user-select: none;
+}
