@@ -209,6 +209,9 @@ em { font-style: italic; }
 }
 .hero h1, .hero h2 { color: #fff; }
 .hero .lead { color: var(--on-blue); }
+/* Inline cross-links in a hero read as red so they stand out on the blue. */
+.hero .lead a { color: #ff6b6b; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.hero .lead a:hover { color: #ff9a9a; }
 .hero .eyebrow, .hero .tag { color: var(--on-blue-dim); }
 .hero .tag { font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: 12px; }
 
