@@ -50,14 +50,15 @@ function parseCsv(text: string): { email: string; name: string }[] {
 }
 
 export default function ImportSubscribersSheet({
-  onClose, onDone,
+  fixedGroup, onClose, onDone,
 }: {
+  fixedGroup?: string;
   onClose: () => void;
   onDone: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<{ email: string; name: string }[]>([]);
-  const [group, setGroup] = useState('');
+  const [group, setGroup] = useState(fixedGroup ?? '');
   const [fileName, setFileName] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ added: number; skipped: number; invalid: number } | null>(null);
@@ -72,7 +73,7 @@ export default function ImportSubscribersSheet({
       const text = await f.text();
       const parsed = parseCsv(text);
       setRows(parsed);
-      if (!group.trim()) setGroup((f.name.replace(/\.csv$/i, '').slice(0, 60)) || 'Imported list');
+      if (!fixedGroup && !group.trim()) setGroup((f.name.replace(/\.csv$/i, '').slice(0, 60)) || 'Imported list');
     } catch {
       alert('Could not read that file.');
     }
@@ -116,7 +117,11 @@ export default function ImportSubscribersSheet({
           <>
             <div className="field">
               <label>Group name</label>
-              <input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="e.g. January mailing list" />
+              {fixedGroup ? (
+                <input value={group} readOnly style={{ background: 'var(--crm-bg)', color: 'var(--crm-ink-soft)' }} />
+              ) : (
+                <input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="e.g. January mailing list" />
+              )}
             </div>
 
             <div className="field">

@@ -401,3 +401,18 @@
   border-style: dashed; font-weight: 700; font-size: 1rem;
 }
 .pe-tile.pe-tile-add:hover { background: var(--blue-soft); }
+
+/* Add-subscribers popout (group subpage) */
+.add-sub-wrap { position: relative; }
+.add-sub-backdrop { position: fixed; inset: 0; z-index: 40; }
+.add-sub-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 41;
+  background: var(--crm-surface); border: 1px solid var(--crm-border); border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(38, 56, 82, 0.16); padding: 6px; min-width: 176px;
+  display: flex; flex-direction: column;
+}
+.add-sub-menu button {
+  text-align: left; background: none; border: none; padding: 9px 12px; border-radius: 7px;
+  font-family: inherit; font-size: 0.92rem; color: var(--crm-ink); cursor: pointer;
+}
+.add-sub-menu button:hover { background: var(--blue-soft); }

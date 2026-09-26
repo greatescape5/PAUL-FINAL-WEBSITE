@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import CrmShell from '@/components/crm/CrmShell';
 import NewsletterComposer from '@/components/crm/NewsletterComposer';
 import ImportSubscribersSheet from '@/components/crm/ImportSubscribersSheet';
+import AddSubscriberSheet from '@/components/crm/AddSubscriberSheet';
 import {
   getSubscribers, setSubscriberStatus, deleteSubscriber, updateSubscriberGroup, getBroadcasts,
   getGroups, createGroup,
@@ -63,6 +64,9 @@ export default function SubscriptionsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importGroup, setImportGroup] = useState<string | null>(null);
+  const [manualGroup, setManualGroup] = useState<string | null>(null);
+  const [addMenu, setAddMenu] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>('all');
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Broadcast | null>(null);
@@ -228,7 +232,7 @@ export default function SubscriptionsPage() {
             <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
               {activeCount} subscribed · {rows.length} total
             </span>
-            <button className="action-btn" onClick={() => setImporting(true)}>Import CSV</button>
+            <button className="action-btn" onClick={() => { setImportGroup(null); setImporting(true); }}>Import CSV</button>
             <button className="action-btn" onClick={exportCsv} disabled={filtered.length === 0}>
               Export CSV
             </button>
@@ -289,6 +293,18 @@ export default function SubscriptionsPage() {
                   <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
                     {subs.length} subscribed · {members.length} total
                   </span>
+                  <div className="add-sub-wrap">
+                    <button className="action-btn primary" onClick={() => setAddMenu((o) => !o)}>+ Add subscribers ▾</button>
+                    {addMenu && (
+                      <>
+                        <div className="add-sub-backdrop" onClick={() => setAddMenu(false)} />
+                        <div className="add-sub-menu">
+                          <button onClick={() => { setAddMenu(false); setImportGroup(openGroup); setImporting(true); }}>Upload CSV</button>
+                          <button onClick={() => { setAddMenu(false); setManualGroup(openGroup); }}>Enter manually</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 {members.length === 0 ? (
                   <div className="crm-empty" style={{ padding: '50px 24px' }}>
@@ -325,8 +341,16 @@ export default function SubscriptionsPage() {
 
       {importing && (
         <ImportSubscribersSheet
+          fixedGroup={importGroup ?? undefined}
           onClose={() => setImporting(false)}
           onDone={() => { setImporting(false); load(); }}
+        />
+      )}
+
+      {manualGroup && (
+        <AddSubscriberSheet
+          group={manualGroup}
+          onClose={() => { setManualGroup(null); load(); }}
         />
       )}
 
