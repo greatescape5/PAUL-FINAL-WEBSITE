@@ -416,3 +416,11 @@
   font-family: inherit; font-size: 0.92rem; color: var(--crm-ink); cursor: pointer;
 }
 .add-sub-menu button:hover { background: var(--blue-soft); }
+
+/* Buttons and clickable labels shouldn't show a text (I-beam) cursor or let
+   their text be selected when clicked. */
+.crm-app button,
+.crm-app label {
+  -webkit-user-select: none;
+  user-select: none;
+}
