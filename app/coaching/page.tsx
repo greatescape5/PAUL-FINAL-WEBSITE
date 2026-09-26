@@ -7,38 +7,39 @@ import ProgramGrid from '@/components/ProgramGrid';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Programs',
+  title: 'Coaching',
   description:
-    'One-time training programs from Flow Motion Personal Training — buy once, follow a structured plan, gym or at home. Starter, Kickstart, and Transformation.',
-  alternates: { canonical: '/programs' },
+    'Ongoing online coaching from Flow Motion Personal Training — monthly plans with training, accountability, and full 1:1 support. Build, Accountability, and 1:1 Coaching.',
+  alternates: { canonical: '/coaching' },
   openGraph: {
-    title: 'Programs | Flow Motion Personal Training',
-    description: 'One-time training programs — buy once, train gym or at home.',
-    url: '/programs',
+    title: 'Coaching | Flow Motion Personal Training',
+    description: 'Ongoing monthly coaching — training, accountability, and full 1:1 support.',
+    url: '/coaching',
     type: 'website',
   },
 };
 
-export default async function ProgramsPage() {
-  const programs = (await getPublishedPrograms()).filter((p) => p.oneOff);
+export default async function CoachingPage() {
+  const programs = (await getPublishedPrograms()).filter((p) => !p.oneOff);
 
   return (
     <>
       <section className="hero">
         <div className="container center">
-          <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>One-Time Programs</span>
-          <h1>Buy once. Train on your own schedule.</h1>
+          <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>Ongoing Coaching</span>
+          <h1>Coaching that grows with you</h1>
           <p className="lead" style={{ margin: '0 auto' }}>
-            Structured, done-for-you programs you purchase once — pick the gym or
-            at-home version and go at your own pace. Ready to level up?{' '}
-            <Link href="/coaching">See the coaching plans</Link>.
+            Monthly coaching built around your life — from smart programming and
+            accountability to full 1:1 support. Start where you are and move up
+            as you go. Prefer a one-time plan?{' '}
+            <Link href="/programs">See the programs</Link>.
           </p>
         </div>
       </section>
 
       <section className="section band-pale">
         <div className="container">
-          <ProgramGrid programs={programs} emptyNote="Programs are coming soon — check back shortly." />
+          <ProgramGrid programs={programs} emptyNote="Coaching plans are coming soon — check back shortly." />
         </div>
       </section>
 

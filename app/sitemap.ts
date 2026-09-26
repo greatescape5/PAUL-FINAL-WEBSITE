@@ -6,7 +6,7 @@ export const revalidate = 60;
 
 // Public routes only. Add new pages here as later phases ship
 // (/success-stories, /start, /guide, /privacy, /terms).
-const ROUTES = ['/', '/programs', '/about', '/contact'];
+const ROUTES = ['/', '/coaching', '/programs', '/about', '/contact'];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

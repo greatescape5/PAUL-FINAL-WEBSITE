@@ -40,15 +40,18 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
   // set, the action routes to the contact form so no lead is lost.
   const actionHref = program.ptdUrl || '/contact#get-in-touch';
   const actionLabel = program.ctaLabel || `Get Started with ${program.name}`;
+  // Recurring plans live under Coaching; one-time ones under Programs.
+  const listHref = program.oneOff ? '/programs' : '/coaching';
+  const listLabel = program.oneOff ? 'All Programs' : 'All Coaching';
 
   return (
     <>
       <section className="hero" style={{ padding: '56px 0 44px' }}>
         <div className="container">
           <p style={{ marginBottom: 14 }}>
-            <Link href="/programs" style={{ color: 'var(--on-blue-dim)' }}>&larr; All Programs</Link>
+            <Link href={listHref} style={{ color: 'var(--on-blue-dim)' }}>&larr; {listLabel}</Link>
           </p>
-          <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>Coaching Program</span>
+          <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>{program.oneOff ? 'Training Program' : 'Coaching Plan'}</span>
           <h1>{program.name}</h1>
           <p className="lead">{program.tagline}</p>
         </div>
@@ -108,7 +111,7 @@ export default async function ProgramDetailPage({ params }: { params: { slug: st
           </p>
           <div className="btn-row center">
             <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>
-            <Link href="/programs" className="btn btn-outline">Compare Programs</Link>
+            <Link href={listHref} className="btn btn-outline">{program.oneOff ? 'Compare Programs' : 'Compare Plans'}</Link>
           </div>
         </div>
       </section>

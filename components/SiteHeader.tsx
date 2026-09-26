@@ -7,6 +7,7 @@ import { BUSINESS } from '@/lib/site';
 
 const NAV = [
   { href: '/', label: 'Home' },
+  { href: '/coaching', label: 'Coaching' },
   { href: '/programs', label: 'Programs' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
