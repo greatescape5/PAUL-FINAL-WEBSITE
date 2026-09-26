@@ -29,7 +29,7 @@ export default function AboutPage() {
               aria-label="Your coach at the gym"
             />
             <div className="split-copy">
-              <span className="eyebrow">About Your Trainer</span>
+              <span className="eyebrow">Flow to get there. Flow Together.</span>
               <h1>Build lean muscle, lose body fat, and feel your <em>best</em>.</h1>
               <p style={{ maxWidth: 520 }}>
                 Online fitness coaching provides custom exercise and nutrition
