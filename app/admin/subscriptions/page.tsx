@@ -5,9 +5,10 @@ import CrmShell from '@/components/crm/CrmShell';
 import NewsletterComposer from '@/components/crm/NewsletterComposer';
 import ImportSubscribersSheet from '@/components/crm/ImportSubscribersSheet';
 import AddSubscriberSheet from '@/components/crm/AddSubscriberSheet';
+import CreateGroupSheet from '@/components/crm/CreateGroupSheet';
 import {
   getSubscribers, setSubscriberStatus, deleteSubscriber, updateSubscriberGroup, getBroadcasts,
-  getGroups, createGroup,
+  getGroups,
   type Subscriber, type Broadcast,
 } from '@/lib/crm';
 
@@ -67,6 +68,7 @@ export default function SubscriptionsPage() {
   const [importGroup, setImportGroup] = useState<string | null>(null);
   const [manualGroup, setManualGroup] = useState<string | null>(null);
   const [addMenu, setAddMenu] = useState(false);
+  const [creatingGroup, setCreatingGroup] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>('all');
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Broadcast | null>(null);
@@ -113,13 +115,6 @@ export default function SubscriptionsPage() {
     return m;
   }, [rows]);
 
-  async function addGroup() {
-    const name = prompt('New group name:')?.trim();
-    if (!name) return;
-    if (groups.includes(name)) { alert('That group already exists.'); return; }
-    try { await createGroup(name); await loadGroups(); }
-    catch (e: any) { alert(e?.message ?? 'Could not create group'); }
-  }
 
   async function moveGroup(sub: Subscriber, group: string) {
     if (group === sub.group_name) return;
@@ -219,7 +214,7 @@ export default function SubscriptionsPage() {
             {broadcasts.length} sent
           </span>
         ) : filter === 'groups' ? (
-          <button className="action-btn primary" onClick={addGroup}>+ Add group</button>
+          <button className="action-btn primary" onClick={() => setCreatingGroup(true)}>+ Add group</button>
         ) : (
           <>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', color: 'var(--crm-ink-soft)' }}>
@@ -318,7 +313,7 @@ export default function SubscriptionsPage() {
           })()
         ) : (
           <div className="pe-tiles">
-            <button className="pe-tile pe-tile-add" onClick={addGroup}>+ Add group</button>
+            <button className="pe-tile pe-tile-add" onClick={() => setCreatingGroup(true)}>+ Add group</button>
             {groups.map((g) => (
               <button key={g} className="pe-tile" onClick={() => setOpenGroup(g)}>
                 <div className="pe-tile-name">{g}</div>
@@ -351,6 +346,14 @@ export default function SubscriptionsPage() {
         <AddSubscriberSheet
           group={manualGroup}
           onClose={() => { setManualGroup(null); load(); }}
+        />
+      )}
+
+      {creatingGroup && (
+        <CreateGroupSheet
+          existingGroups={groups}
+          onClose={() => setCreatingGroup(false)}
+          onCreated={(name) => { setCreatingGroup(false); loadGroups(); load(); setOpenGroup(name); }}
         />
       )}
 
