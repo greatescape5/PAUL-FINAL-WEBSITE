@@ -417,10 +417,15 @@
 }
 .add-sub-menu button:hover { background: var(--blue-soft); }
 
-/* Buttons and clickable labels shouldn't show a text (I-beam) cursor or let
-   their text be selected when clicked. */
+/* Buttons, clickable labels, and UI headings/titles shouldn't show a text
+   (I-beam) cursor or let their text be selected when clicked. */
 .crm-app button,
-.crm-app label {
+.crm-app label,
+.crm-app h1,
+.crm-app h2,
+.crm-app h3,
+.crm-app h4,
+.crm-app .crm-group-title {
   -webkit-user-select: none;
   user-select: none;
 }
