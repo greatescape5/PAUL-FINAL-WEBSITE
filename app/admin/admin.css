@@ -417,15 +417,23 @@
 }
 .add-sub-menu button:hover { background: var(--blue-soft); }
 
-/* Buttons, clickable labels, and UI headings/titles shouldn't show a text
-   (I-beam) cursor or let their text be selected when clicked. */
-.crm-app button,
-.crm-app label,
-.crm-app h1,
-.crm-app h2,
-.crm-app h3,
-.crm-app h4,
-.crm-app .crm-group-title {
+/* App-like: the CRM chrome (labels, badges, values, headings) isn't
+   selectable, so it shows a normal cursor instead of the text I-beam. Form
+   fields, the newsletter editor, and the data you'd actually copy (names,
+   emails, phone, notes, recipient lists) stay selectable. */
+.crm-app {
   -webkit-user-select: none;
   user-select: none;
+}
+.crm-app input,
+.crm-app textarea,
+.crm-app select,
+.crm-app [contenteditable],
+.crm-app .nm,
+.crm-app .contact-meta,
+.crm-app .tl-text,
+.crm-app .nl-recipients,
+.crm-app .import-preview {
+  -webkit-user-select: text;
+  user-select: text;
 }
