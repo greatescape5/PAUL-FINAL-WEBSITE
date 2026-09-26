@@ -647,16 +647,16 @@ export async function uploadProgramImage(file: File) {
 }
 
 /** Sends the composed newsletter to subscribed contacts (via the server).
- *  Pass a group to target only that group; null sends to everyone subscribed. */
+ *  Pass one or more groups to target only those; null/empty sends to everyone. */
 export async function sendNewsletter(
-  subject: string, html: string, ctaId: string | null = null, group: string | null = null,
+  subject: string, html: string, ctaId: string | null = null, groups: string[] | null = null,
 ): Promise<{ sent: number }> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Your session expired — sign in again.')
   const res = await fetch('/api/newsletter/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify({ subject, html, ctaId, group }),
+    body: JSON.stringify({ subject, html, ctaId, groups }),
   })
   const out = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(out?.error || 'Send failed')
@@ -687,6 +687,18 @@ export async function deleteSubscriber(id: string) {
 /** Moves a subscriber to a different group. */
 export async function updateSubscriberGroup(id: string, group: string) {
   const { error } = await supabase.from('subscribers').update({ group_name: group }).eq('id', id)
+  if (error) throw error
+}
+
+/** All defined groups (see migration 0019), including empty ones. */
+export async function getGroups(): Promise<string[]> {
+  const { data, error } = await supabase.from('subscriber_groups').select('name').order('name')
+  if (error) throw error
+  return (data ?? []).map((r) => r.name as string)
+}
+
+export async function createGroup(name: string) {
+  const { error } = await supabase.from('subscriber_groups').insert({ name })
   if (error) throw error
 }
 

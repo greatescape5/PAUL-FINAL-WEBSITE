@@ -24,14 +24,28 @@ export default function NewsletterComposer({
   const [err, setErr] = useState('');
   const [ctas, setCtas] = useState<NewsletterCta[]>([]);
   const [selectedCtaId, setSelectedCtaId] = useState<string | null>(null);
-  const [group, setGroup] = useState<string>(initialGroup);
+  // Empty set = "all subscribers"; otherwise the union of the chosen groups.
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(
+    () => new Set(initialGroup && initialGroup !== 'all' ? [initialGroup] : []),
+  );
 
   useEffect(() => {
     getNewsletterCtas().then(setCtas).catch(() => {});
   }, []);
 
   const selectedCta = ctas.find((c) => c.id === selectedCtaId) ?? null;
-  const recipientCount = group === 'all' ? totalActive : (groupCounts[group] ?? 0);
+  const allMode = selectedGroups.size === 0;
+  const recipientCount = allMode
+    ? totalActive
+    : [...selectedGroups].reduce((n, g) => n + (groupCounts[g] ?? 0), 0);
+
+  function toggleGroup(g: string) {
+    setSelectedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(g)) next.delete(g); else next.add(g);
+      return next;
+    });
+  }
 
   function exec(cmd: string, value?: string) {
     editorRef.current?.focus();
@@ -66,12 +80,14 @@ export default function NewsletterComposer({
       setErr('Add a subject and some content first.');
       return;
     }
-    const target = group === 'all' ? 'all subscribers' : `the "${group}" group`;
+    const target = allMode
+      ? 'all subscribers'
+      : `${selectedGroups.size} group${selectedGroups.size === 1 ? '' : 's'}`;
     if (!confirm(`Send "${subject.trim()}" to ${recipientCount} subscriber${recipientCount === 1 ? '' : 's'} in ${target}?`)) return;
     setSending(true);
     setErr('');
     try {
-      const { sent } = await sendNewsletter(subject.trim(), html, selectedCtaId, group === 'all' ? null : group);
+      const { sent } = await sendNewsletter(subject.trim(), html, selectedCtaId, allMode ? null : [...selectedGroups]);
       setSubject('');
       if (editorRef.current) editorRef.current.innerHTML = '';
       onSent(sent);
@@ -90,11 +106,19 @@ export default function NewsletterComposer({
   return (
     <div className="nl-composer">
       <div className="field">
-        <label>Send to</label>
-        <select value={group} onChange={(e) => setGroup(e.target.value)}>
-          <option value="all">All subscribers ({totalActive})</option>
-          {groups.map((g) => <option key={g} value={g}>{g} ({groupCounts[g] ?? 0})</option>)}
-        </select>
+        <label>Send to {allMode ? '' : `— ${recipientCount} recipient${recipientCount === 1 ? '' : 's'}`}</label>
+        <div className="nl-group-picker">
+          <label className={`nl-group-opt${allMode ? ' on' : ''}`}>
+            <input type="checkbox" checked={allMode} onChange={() => setSelectedGroups(new Set())} />
+            All subscribers ({totalActive})
+          </label>
+          {groups.map((g) => (
+            <label key={g} className={`nl-group-opt${selectedGroups.has(g) ? ' on' : ''}`}>
+              <input type="checkbox" checked={selectedGroups.has(g)} onChange={() => toggleGroup(g)} />
+              {g} ({groupCounts[g] ?? 0})
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className="field">

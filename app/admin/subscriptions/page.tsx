@@ -6,6 +6,7 @@ import NewsletterComposer from '@/components/crm/NewsletterComposer';
 import ImportSubscribersSheet from '@/components/crm/ImportSubscribersSheet';
 import {
   getSubscribers, setSubscriberStatus, deleteSubscriber, updateSubscriberGroup, getBroadcasts,
+  getGroups, createGroup,
   type Subscriber, type Broadcast,
 } from '@/lib/crm';
 
@@ -33,7 +34,7 @@ function fmtDateTime(ts: string) {
   });
 }
 
-type Filter = 'all' | 'subscribed' | 'unsubscribed' | 'history';
+type Filter = 'all' | 'subscribed' | 'unsubscribed' | 'groups' | 'history';
 
 function toCsv(rows: Subscriber[]): string {
   const esc = (v: unknown) => {
@@ -55,6 +56,7 @@ function toCsv(rows: Subscriber[]): string {
 
 export default function SubscriptionsPage() {
   const [rows, setRows] = useState<Subscriber[]>([]);
+  const [groupDefs, setGroupDefs] = useState<string[]>([]);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
@@ -71,11 +73,15 @@ export default function SubscriptionsPage() {
     finally { setLoading(false); }
   }, []);
 
+  const loadGroups = useCallback(async () => {
+    try { setGroupDefs(await getGroups()); } catch { setGroupDefs([]); }
+  }, []);
+
   const loadBroadcasts = useCallback(async () => {
     try { setBroadcasts(await getBroadcasts()); } catch { setBroadcasts([]); }
   }, []);
 
-  useEffect(() => { load(); loadBroadcasts(); }, [load, loadBroadcasts]);
+  useEffect(() => { load(); loadGroups(); loadBroadcasts(); }, [load, loadGroups, loadBroadcasts]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) =>
@@ -86,13 +92,29 @@ export default function SubscriptionsPage() {
 
   const activeCount = useMemo(() => rows.filter((r) => r.status === 'subscribed').length, [rows]);
 
-  // Distinct groups + how many subscribed in each (for the filter + composer).
-  const groups = useMemo(() => [...new Set(rows.map((r) => r.group_name))].sort(), [rows]);
+  // Groups = defined groups ∪ any groups present on subscribers.
+  const groups = useMemo(
+    () => [...new Set([...groupDefs, ...rows.map((r) => r.group_name)])].sort(),
+    [groupDefs, rows],
+  );
   const groupCounts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const r of rows) if (r.status === 'subscribed') m[r.group_name] = (m[r.group_name] ?? 0) + 1;
     return m;
   }, [rows]);
+  const groupTotals = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of rows) m[r.group_name] = (m[r.group_name] ?? 0) + 1;
+    return m;
+  }, [rows]);
+
+  async function addGroup() {
+    const name = prompt('New group name:')?.trim();
+    if (!name) return;
+    if (groups.includes(name)) { alert('That group already exists.'); return; }
+    try { await createGroup(name); await loadGroups(); }
+    catch (e: any) { alert(e?.message ?? 'Could not create group'); }
+  }
 
   async function moveGroup(sub: Subscriber, group: string) {
     if (group === sub.group_name) return;
@@ -136,9 +158,12 @@ export default function SubscriptionsPage() {
     <CrmShell title="Subscriptions">
       <div className="crm-toolbar">
         <div className="seg">
-          {(['all', 'subscribed', 'unsubscribed', 'history'] as Filter[]).map((f) => (
+          {([
+            ['all', 'All'], ['subscribed', 'Subscribed'], ['unsubscribed', 'Unsubscribed'],
+            ['groups', 'Groups'], ['history', 'History'],
+          ] as [Filter, string][]).map(([f, label]) => (
             <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-              {f === 'all' ? 'All' : f === 'subscribed' ? 'Subscribed' : f === 'unsubscribed' ? 'Unsubscribed' : 'History'}
+              {label}
             </button>
           ))}
         </div>
@@ -147,6 +172,8 @@ export default function SubscriptionsPage() {
           <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
             {broadcasts.length} sent
           </span>
+        ) : filter === 'groups' ? (
+          <button className="action-btn primary" onClick={addGroup}>+ Add group</button>
         ) : (
           <>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', color: 'var(--crm-ink-soft)' }}>
@@ -206,6 +233,16 @@ export default function SubscriptionsPage() {
             ))}
           </div>
         )
+      ) : filter === 'groups' ? (
+        <div className="pe-tiles">
+          <button className="pe-tile pe-tile-add" onClick={addGroup}>+ Add group</button>
+          {groups.map((g) => (
+            <button key={g} className="pe-tile" onClick={() => { setGroupFilter(g); setFilter('all'); }}>
+              <div className="pe-tile-name">{g}</div>
+              <div className="pe-tile-meta">{groupCounts[g] ?? 0} subscribed · {groupTotals[g] ?? 0} total</div>
+            </button>
+          ))}
+        </div>
       ) : loading ? (
         <div className="crm-loading">Loading…</div>
       ) : filtered.length === 0 ? (

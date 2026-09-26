@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Email sending is not configured (missing Resend key or from-address).' }, { status: 500 });
   }
 
-  let body: { subject?: string; html?: string; ctaId?: string | null; group?: string | null };
+  let body: { subject?: string; html?: string; ctaId?: string | null; groups?: string[] | null };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
@@ -91,8 +91,10 @@ export async function POST(req: Request) {
   let subQuery = admin
     .from('subscribers').select('email,unsub_token')
     .eq('status', 'subscribed');
-  const group = typeof body.group === 'string' && body.group.trim() ? body.group.trim() : null;
-  if (group) subQuery = subQuery.eq('group_name', group);
+  const groups = Array.isArray(body.groups)
+    ? body.groups.map((g) => String(g).trim()).filter(Boolean)
+    : [];
+  if (groups.length > 0) subQuery = subQuery.in('group_name', groups);
   const { data: subs, error: subErr } = await subQuery;
   if (subErr) {
     return NextResponse.json({ error: 'Could not load subscribers.' }, { status: 500 });

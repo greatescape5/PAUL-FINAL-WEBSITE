@@ -384,3 +384,20 @@
 .import-preview table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .import-preview th { text-align: left; background: #f4f6f9; color: var(--crm-ink-soft); font-weight: 600; padding: 7px 12px; }
 .import-preview td { padding: 7px 12px; border-top: 1px solid var(--crm-border); color: var(--crm-ink); overflow-wrap: anywhere; }
+
+/* Composer multi-group picker */
+.nl-group-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.nl-group-opt {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  border: 1px solid var(--crm-border); background: #fff; border-radius: 8px;
+  padding: 8px 12px; font-size: 0.9rem; color: var(--crm-ink);
+}
+.nl-group-opt.on { border-color: var(--blue); background: var(--blue-soft); }
+.nl-group-opt input { margin: 0; }
+
+/* Add-group tile (Groups tab) */
+.pe-tile.pe-tile-add {
+  align-items: center; justify-content: center; color: var(--blue-deep);
+  border-style: dashed; font-weight: 700; font-size: 1rem;
+}
+.pe-tile.pe-tile-add:hover { background: var(--blue-soft); }
