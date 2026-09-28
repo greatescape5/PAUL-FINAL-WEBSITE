@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import CrmShell from '@/components/crm/CrmShell';
 import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import { getToday, applyRateChange, type TodayItem } from '@/lib/crm';
@@ -45,7 +44,7 @@ export default function TodayPage() {
   const go = (id: string) => router.push(`/admin/people/${id}`);
 
   return (
-    <CrmShell title="Today">
+    <>
       {loading ? (
         <div className="crm-loading">Loading…</div>
       ) : items.length === 0 ? (
@@ -174,6 +173,6 @@ export default function TodayPage() {
           onDone={() => { setCompletingCheckIn(null); load(); }}
         />
       )}
-    </CrmShell>
+    </>
   );
 }

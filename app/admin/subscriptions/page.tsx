@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import CrmShell from '@/components/crm/CrmShell';
 import NewsletterComposer from '@/components/crm/NewsletterComposer';
 import ImportSubscribersSheet from '@/components/crm/ImportSubscribersSheet';
 import AddSubscriberSheet from '@/components/crm/AddSubscriberSheet';
@@ -211,7 +210,7 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <CrmShell title="Subscriptions">
+    <>
       <div className="crm-toolbar">
         <div className="seg">
           {([
@@ -399,6 +398,6 @@ export default function SubscriptionsPage() {
           </div>
         </div>
       )}
-    </CrmShell>
+    </>
   );
 }

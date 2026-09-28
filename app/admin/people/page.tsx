@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import CrmShell from '@/components/crm/CrmShell';
 import {
   getContacts, createContact, getStages, getTiers,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
@@ -154,7 +153,7 @@ export default function PeoplePage() {
   }
 
   return (
-    <CrmShell title="People">
+    <>
       <div className="crm-toolbar">
         <div className="seg">
           {SEGMENTS.map((s) => (
@@ -249,7 +248,7 @@ export default function PeoplePage() {
           onCreated={(id) => router.push(`/admin/people/${id}`)}
         />
       )}
-    </CrmShell>
+    </>
   );
 }
 

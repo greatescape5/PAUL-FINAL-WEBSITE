@@ -423,3 +423,7 @@
 /* Destructive action button (theme red) */
 .action-btn.danger { background: var(--red); color: #fff; border-color: var(--red); }
 .action-btn.danger:hover { background: var(--red-deep); border-color: var(--red-deep); }
+
+/* CRM content-only transition (sidebar stays put; only this fades on nav) */
+.crm-fade { animation: pageFade 0.2s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .crm-fade { animation: none; } }

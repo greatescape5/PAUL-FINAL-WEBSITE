@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import CrmShell from '@/components/crm/CrmShell';
 import {
   getExpenses, createExpense, updateExpense, archiveExpense,
   getBillingContacts, getMrr, getTiers,
@@ -158,7 +157,7 @@ export default function PnlPage() {
   }
 
   return (
-    <CrmShell title="Profit & Loss">
+    <>
       {loading ? (
         <div className="crm-loading">Loading…</div>
       ) : (
@@ -334,7 +333,7 @@ export default function PnlPage() {
           </div>
         </div>
       )}
-    </CrmShell>
+    </>
   );
 }
 

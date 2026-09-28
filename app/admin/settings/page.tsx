@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import CrmShell from '@/components/crm/CrmShell';
 import {
   getStages, createStage, updateStage, archiveStage,
   getTiers, createTier, updateTier, archiveTier,
@@ -138,7 +137,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <CrmShell title="Settings">
+    <>
       {loading ? (
         <div className="crm-loading">Loading…</div>
       ) : (
@@ -304,6 +303,6 @@ export default function SettingsPage() {
           )}
         </>
       )}
-    </CrmShell>
+    </>
   );
 }

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import CrmShell from '@/components/crm/CrmShell';
 import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
@@ -126,14 +125,14 @@ export default function ContactDetailPage() {
 
 
 
-  if (loading) return <CrmShell title="Contact"><div className="crm-loading">Loading…</div></CrmShell>;
-  if (notFound || !contact) return <CrmShell title="Contact"><div className="crm-loading">Contact not found. <Link href="/admin/people">Back to People</Link></div></CrmShell>;
+  if (loading) return <><div className="crm-loading">Loading…</div></>;
+  if (notFound || !contact) return <><div className="crm-loading">Contact not found. <Link href="/admin/people">Back to People</Link></div></>;
 
   const c = contact;
   const phoneHref = c.phone ? `tel:${c.phone.replace(/[^+\d]/g, '')}` : null;
 
   return (
-    <CrmShell title="Contact">
+    <>
       <Link href="/admin/people" className="crm-back">← People</Link>
 
       {c.needs_review && (
@@ -332,7 +331,7 @@ export default function ContactDetailPage() {
           onDone={() => { setCompletingCheckIn(null); load(); }}
         />
       )}
-    </CrmShell>
+    </>
   );
 }
 

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import CrmShell from '@/components/crm/CrmShell';
 import { getContactLeads, type ContactLead } from '@/lib/crm';
 
 function fmtDateTime(ts: string) {
@@ -26,7 +25,7 @@ export default function ContactFormsPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <CrmShell title="Contact Forms">
+    <>
       <div className="crm-toolbar">
         <p style={{ color: 'var(--crm-ink-soft)', margin: 0, flex: 1 }}>
           People who submitted the website contact form. Click one to open their contact record.
@@ -58,6 +57,6 @@ export default function ContactFormsPage() {
           ))}
         </div>
       )}
-    </CrmShell>
+    </>
   );
 }

@@ -17,9 +17,25 @@ const NAV = [
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-export default function CrmShell({ title, children }: { title: string; children: React.ReactNode }) {
+// Topbar title derived from the route (the shell is a persistent layout now).
+function titleFor(pathname: string): string {
+  if (pathname.startsWith('/admin/people/') && pathname !== '/admin/people') return 'Contact';
+  const map: Record<string, string> = {
+    '/admin/today': 'Today',
+    '/admin/people': 'People',
+    '/admin/pnl': 'Profit & Loss',
+    '/admin/programs': 'Programs',
+    '/admin/subscriptions': 'Subscriptions',
+    '/admin/contact-forms': 'Contact Forms',
+    '/admin/settings': 'Settings',
+  };
+  return map[pathname] ?? 'CRM';
+}
+
+export default function CrmShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const title = titleFor(pathname);
   const [ready, setReady] = useState(false);
   const [who, setWho] = useState('');
   const [mrr, setMrr] = useState<{ mrr: number; active_clients: number; paused_clients: number } | null>(null);
@@ -80,7 +96,9 @@ export default function CrmShell({ title, children }: { title: string; children:
         <div className="crm-topbar">
           <h1>{title}</h1>
         </div>
-        <div className="crm-content">{children}</div>
+        <div className="crm-content">
+          <div key={pathname} className="crm-fade">{children}</div>
+        </div>
       </main>
     </div>
   );
