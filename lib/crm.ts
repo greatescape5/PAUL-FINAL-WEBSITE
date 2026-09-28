@@ -533,6 +533,37 @@ export interface Broadcast {
   recipients: string[]
 }
 
+// ---- Contact-form submissions (logged as 'form_submission' activities) ----
+export interface ContactLead {
+  id: string
+  contact_id: string
+  created_at: string
+  name: string
+  email: string
+  phone: string
+  contact_method: string
+  message: string
+}
+
+export async function getContactLeads() {
+  const { data, error } = await supabase
+    .from('activities')
+    .select('id,contact_id,created_at,meta,body')
+    .eq('kind', 'form_submission')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((a: any) => ({
+    id: a.id,
+    contact_id: a.contact_id,
+    created_at: a.created_at,
+    name: a.meta?.name ?? '',
+    email: a.meta?.email ?? '',
+    phone: a.meta?.phone ?? '',
+    contact_method: a.meta?.contact_method ?? '',
+    message: a.meta?.message ?? a.body ?? '',
+  })) as ContactLead[]
+}
+
 export async function getBroadcasts() {
   const { data, error } = await supabase
     .from('newsletter_broadcasts').select('id,subject,body_html,sent_count,sent_at,recipients')

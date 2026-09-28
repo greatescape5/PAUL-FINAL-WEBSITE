@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { welcomeEmail } from '@/lib/emails';
+import { welcomeEmail, brandedFrom } from '@/lib/emails';
 import { absoluteUrl } from '@/lib/site';
 
 export const runtime = 'nodejs';
@@ -13,7 +13,7 @@ async function sendWelcome(email: string, token: string | null) {
     const { Resend } = await import('resend');
     const resend = new Resend(resendKey);
     const mail = welcomeEmail({ unsubscribeUrl: absoluteUrl(`/unsubscribe?token=${token}`) });
-    await resend.emails.send({ from: fromEmail, to: email, subject: mail.subject, html: mail.html, text: mail.text });
+    await resend.emails.send({ from: brandedFrom(fromEmail), to: email, subject: mail.subject, html: mail.html, text: mail.text });
   } catch (err) {
     console.error('Welcome email failed:', err);
   }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { newsletterEmail, offerCtaBlock } from '@/lib/emails';
+import { newsletterEmail, offerCtaBlock, brandedFrom } from '@/lib/emails';
 import { absoluteUrl } from '@/lib/site';
 
 export const runtime = 'nodejs';
@@ -112,6 +112,7 @@ export async function POST(req: Request) {
   try {
     const { Resend } = await import('resend');
     const resend = new Resend(resendKey);
+    const sender = brandedFrom(fromEmail);
     for (const group of chunk(recipients, 100)) {
       const batch = group.map((r) => {
         const mail = newsletterEmail({
@@ -120,7 +121,7 @@ export async function POST(req: Request) {
           offerHtml,
           unsubscribeUrl: absoluteUrl(`/unsubscribe?token=${r.unsub_token}`),
         });
-        return { from: fromEmail, to: r.email as string, subject: mail.subject, html: mail.html };
+        return { from: sender, to: r.email as string, subject: mail.subject, html: mail.html };
       });
       const { error } = await resend.batch.send(batch);
       if (error) {

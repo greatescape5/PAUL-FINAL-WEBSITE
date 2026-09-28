@@ -6,6 +6,14 @@ import { absoluteUrl, BUSINESS } from './site';
 
 const SANS = `-apple-system,'Segoe UI',Helvetica,Arial,sans-serif`;
 
+// Brand the "from" so emails show as "Flow Motion" rather than the mailbox name.
+// Accepts a bare address or an existing "Name <email>" and normalizes it.
+export function brandedFrom(from: string | undefined | null): string {
+  const raw = (from || '').trim();
+  const email = raw.match(/<([^>]+)>/)?.[1] || raw;
+  return email ? `${BUSINESS.shortName} <${email}>` : '';
+}
+
 // User-supplied strings always pass through this before hitting HTML.
 function esc(s: string | null | undefined): string {
   return (s ?? '')

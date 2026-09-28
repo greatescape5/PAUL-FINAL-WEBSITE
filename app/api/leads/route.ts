@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { contactInternalEmail, inquiryAutoreplyEmail } from '@/lib/emails';
+import { contactInternalEmail, inquiryAutoreplyEmail, brandedFrom } from '@/lib/emails';
 
 export const runtime = 'nodejs';
 
@@ -130,11 +130,12 @@ export async function POST(req: Request) {
         timeZone: 'America/Los_Angeles', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
       });
 
+      const sender = brandedFrom(fromEmail);
       const internal = contactInternalEmail({ name, email, phone, contactMethod, message, submittedAt });
-      await resend.emails.send({ from: fromEmail, to: toEmail, replyTo: email, subject: internal.subject, html: internal.html, text: internal.text });
+      await resend.emails.send({ from: sender, to: toEmail, replyTo: email, subject: internal.subject, html: internal.html, text: internal.text });
 
       const auto = inquiryAutoreplyEmail({ name, message });
-      await resend.emails.send({ from: fromEmail, to: email, replyTo: toEmail, subject: auto.subject, html: auto.html, text: auto.text });
+      await resend.emails.send({ from: sender, to: email, replyTo: toEmail, subject: auto.subject, html: auto.html, text: auto.text });
     } catch (err) {
       console.error('Lead email failed:', err);
     }
