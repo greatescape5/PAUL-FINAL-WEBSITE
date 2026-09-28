@@ -2,7 +2,6 @@ import Link from 'next/link';
 import JsonLd from '@/components/JsonLd';
 import InstagramFeed from '@/components/InstagramFeed';
 import { businessSchema } from '@/lib/seo';
-import { BUSINESS } from '@/lib/site';
 
 export const metadata = {
   alternates: { canonical: '/' },
@@ -165,7 +164,6 @@ export default function HomePage() {
             </p>
             <div className="btn-row center">
               <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>
-              <a href={`tel:${BUSINESS.phoneE164}`} className="btn btn-ghost">Call {BUSINESS.phoneDisplay}</a>
             </div>
           </div>
         </div>

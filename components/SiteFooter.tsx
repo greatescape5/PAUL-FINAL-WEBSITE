@@ -32,7 +32,6 @@ export default function SiteFooter() {
           </div>
           <div>
             <h4>Get in Touch</h4>
-            <p style={{ margin: '0 0 6px' }}><a href={`tel:${BUSINESS.phoneE164}`}>{BUSINESS.phoneDisplay}</a></p>
             <p style={{ margin: '0 0 6px' }}><a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a></p>
             <p style={{ margin: '0 0 10px' }}>{BUSINESS.address.city}, {BUSINESS.address.region}</p>
             <p style={{ margin: 0 }}>
