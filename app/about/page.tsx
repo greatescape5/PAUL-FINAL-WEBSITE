@@ -74,16 +74,44 @@ export default function AboutPage() {
               <span className="eyebrow">The Philosophy</span>
               <h2>Fitness that fits into a full life</h2>
               <p>
-                Training shouldn&rsquo;t mean living in the gym. The goal is a body and
-                a base of strength that let you say yes to more — hiking a mountain,
-                keeping up with your kids, sailing, skiing, moving through the world
-                without pain.
+                If you&rsquo;re looking for fast-track results derived from restrictive
+                diets and aggressive exercise, look elsewhere, that&rsquo;s not me.
               </p>
               <p>
-                We&rsquo;ll establish your goals, build a plan that fits your schedule,
-                and adjust as life happens. Direct communication and real
-                accountability keep it moving, so your results last for decades — not
-                weeks.
+                But, if you connect with a workout program that compliments life
+                responsibility, a diet that fuels your physical &amp; emotional needs,
+                and a holistic approach that meets you where you&rsquo;re at, look no
+                further.
+              </p>
+              <p>
+                My name is Paul and over the last 7 years, I have helped 100s of
+                everyday adults build strength, boost daily performance, and improve
+                self confidence, without dedicating their life to fitness.
+              </p>
+              <p>
+                I work with people of varying socio-economic environments, unique
+                physical capabilities, and the full spectrum of exercise enthusiasts
+                from advanced athletes to those who would happily avoid a gym.
+              </p>
+              <p>
+                The philosophy at Flow Motion blends fitness with seasonality, using
+                tools that adapt diet &amp; exercise to match your ability to adhere to
+                your plan.
+              </p>
+              <p>
+                Fitness done well enhances your life, recreation, and confidence,
+                regardless of motivation; fitness should not take from it. However,
+                much of the wellness industry feeds off of extremes, fads, and newness.
+              </p>
+              <p>
+                A reliable, life-long fitness routine flows to get there: balancing
+                structure with freedom, accountability with self-efficacy, and
+                practicality with enjoyment.
+              </p>
+              <p>
+                And by working as a team, we flow together: bridging the gap between
+                knowledge and execution, and continuously refining a process that
+                supports lasting health.
               </p>
             </div>
           </div>
