@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import PageTransition from '@/components/PageTransition';
 import NewsletterPopup from '@/components/NewsletterPopup';
 import Analytics from '@/components/Analytics';
 import JsonLd from '@/components/JsonLd';
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <JsonLd data={websiteSchema()} />
         <SiteHeader />
-        <main>{children}</main>
+        <main><PageTransition>{children}</PageTransition></main>
         <SiteFooter />
         <NewsletterPopup />
         <Analytics />
