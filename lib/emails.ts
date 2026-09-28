@@ -162,7 +162,7 @@ export function inquiryAutoreplyEmail(o: { name: string; message: string }) {
     </table>
   </td></tr>` : ''}
   <tr><td class="px" style="padding:28px 40px 0 40px;">
-    <p style="margin:0 0 12px 0; font-family:${SANS}; font-size:15px; line-height:1.7; color:#4c5763;">In the meantime, if you&rsquo;d like to reach me faster, just call or text <a href="tel:${BUSINESS.phoneE164}" style="color:#456a92; text-decoration:none;">${BUSINESS.phoneDisplay}</a>.</p>
+    <p style="margin:0 0 12px 0; font-family:${SANS}; font-size:15px; line-height:1.7; color:#4c5763;">In the meantime, feel free to reply to this email with anything that would help me help you &mdash; your goals, your schedule, and what you&rsquo;ve tried before.</p>
   </td></tr>
   <tr><td class="px" align="center" style="padding:28px 40px 0 40px;">
     ${redButton(absoluteUrl('/'), 'Visit the website')}
@@ -171,7 +171,7 @@ export function inquiryAutoreplyEmail(o: { name: string; message: string }) {
   const text =
     `Hi ${firstName(o.name)},\n\n` +
     `Thanks for reaching out to ${BUSINESS.name}. I've received your message and will get back to you soon to talk through your goals.\n\n` +
-    `If you'd like to reach me faster, call or text ${BUSINESS.phoneDisplay}.\n\n— ${BUSINESS.name}`;
+    `Feel free to reply to this email with anything that would help — your goals, your schedule, and what you've tried before.\n\n— ${BUSINESS.name}`;
 
   return {
     subject: `Thanks for reaching out — ${BUSINESS.name}`,
