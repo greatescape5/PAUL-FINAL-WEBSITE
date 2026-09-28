@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import CrmShell from '@/components/crm/CrmShell';
 import NewsletterComposer from '@/components/crm/NewsletterComposer';
 import ImportSubscribersSheet from '@/components/crm/ImportSubscribersSheet';
@@ -9,8 +8,8 @@ import AddSubscriberSheet from '@/components/crm/AddSubscriberSheet';
 import CreateGroupSheet from '@/components/crm/CreateGroupSheet';
 import {
   getSubscribers, setSubscriberStatus, deleteSubscriber, updateSubscriberGroup, getBroadcasts,
-  getGroups, deleteGroup, getContactLeads,
-  type Subscriber, type Broadcast, type ContactLead,
+  getGroups, deleteGroup,
+  type Subscriber, type Broadcast,
 } from '@/lib/crm';
 
 // Friendly label for where someone signed up.
@@ -37,7 +36,7 @@ function fmtDateTime(ts: string) {
   });
 }
 
-type Filter = 'all' | 'subscribed' | 'unsubscribed' | 'groups' | 'leads' | 'history';
+type Filter = 'all' | 'subscribed' | 'unsubscribed' | 'groups' | 'history';
 
 function toCsv(rows: Subscriber[]): string {
   const esc = (v: unknown) => {
@@ -58,10 +57,8 @@ function toCsv(rows: Subscriber[]): string {
 }
 
 export default function SubscriptionsPage() {
-  const router = useRouter();
   const [rows, setRows] = useState<Subscriber[]>([]);
   const [groupDefs, setGroupDefs] = useState<string[]>([]);
-  const [leads, setLeads] = useState<ContactLead[]>([]);
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
@@ -106,11 +103,7 @@ export default function SubscriptionsPage() {
     try { setBroadcasts(await getBroadcasts()); } catch { setBroadcasts([]); }
   }, []);
 
-  const loadLeads = useCallback(async () => {
-    try { setLeads(await getContactLeads()); } catch { setLeads([]); }
-  }, []);
-
-  useEffect(() => { load(); loadGroups(); loadBroadcasts(); loadLeads(); }, [load, loadGroups, loadBroadcasts, loadLeads]);
+  useEffect(() => { load(); loadGroups(); loadBroadcasts(); }, [load, loadGroups, loadBroadcasts]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) =>
@@ -223,7 +216,7 @@ export default function SubscriptionsPage() {
         <div className="seg">
           {([
             ['all', 'All'], ['subscribed', 'Subscribed'], ['unsubscribed', 'Unsubscribed'],
-            ['groups', 'Groups'], ['leads', 'Contact forms'], ['history', 'History'],
+            ['groups', 'Groups'], ['history', 'History'],
           ] as [Filter, string][]).map(([f, label]) => (
             <button key={f} className={filter === f ? 'active' : ''} onClick={() => { setFilter(f); setOpenGroup(null); }}>
               {label}
@@ -237,10 +230,6 @@ export default function SubscriptionsPage() {
           </span>
         ) : filter === 'groups' ? (
           <button className="action-btn primary" onClick={() => setCreatingGroup(true)}>+ Add group</button>
-        ) : filter === 'leads' ? (
-          <span style={{ color: 'var(--crm-ink-soft)', fontSize: '0.9rem' }}>
-            {leads.length} submission{leads.length === 1 ? '' : 's'}
-          </span>
         ) : (
           <>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', color: 'var(--crm-ink-soft)' }}>
@@ -348,27 +337,6 @@ export default function SubscriptionsPage() {
                 <div className="pe-tile-name">{g}</div>
                 <div className="pe-tile-meta">{groupCounts[g] ?? 0} subscribed · {groupTotals[g] ?? 0} total</div>
               </button>
-            ))}
-          </div>
-        )
-      ) : filter === 'leads' ? (
-        leads.length === 0 ? (
-          <div className="crm-empty" style={{ padding: '50px 24px' }}>
-            <p>No contact form submissions yet.</p>
-          </div>
-        ) : (
-          <div className="crm-card">
-            {leads.map((l) => (
-              <div key={l.id} className="crm-row" onClick={() => router.push(`/admin/people/${l.contact_id}`)} style={{ cursor: 'pointer' }}>
-                <div className="grow">
-                  <div className="nm">{l.name || l.email || 'Unknown'}</div>
-                  <div className="meta">
-                    {l.email}{l.phone ? ` · ${l.phone}` : ''}{l.contact_method ? ` · prefers ${l.contact_method}` : ''}
-                  </div>
-                  {l.message && <div className="meta" style={{ marginTop: 5, color: 'var(--crm-ink)' }}>{l.message}</div>}
-                </div>
-                <div className="right" style={{ color: 'var(--crm-ink-soft)' }}>{fmtDateTime(l.created_at)}</div>
-              </div>
             ))}
           </div>
         )

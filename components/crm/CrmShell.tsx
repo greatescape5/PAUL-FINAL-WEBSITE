@@ -11,6 +11,7 @@ const NAV = [
   { href: '/admin/pnl', label: 'Profit & Loss' },
   { href: '/admin/programs', label: 'Programs' },
   { href: '/admin/subscriptions', label: 'Subscriptions' },
+  { href: '/admin/contact-forms', label: 'Contact Forms' },
   { href: '/admin/settings', label: 'Settings' },
 ];
 
