@@ -72,7 +72,7 @@ export default function AboutPage() {
             <div className="media-photo" style={{ ['--photo' as string]: "url('/photos/hiking.png')" }} />
             <div>
               <span className="eyebrow">The Philosophy</span>
-              <h2>Fitness that fits into a full life</h2>
+              <h2>Fitness that fits your life</h2>
               <p>
                 If you&rsquo;re looking for fast-track results derived from restrictive
                 diets and aggressive exercise, look elsewhere, that&rsquo;s not me.
@@ -125,8 +125,8 @@ export default function AboutPage() {
             <span className="eyebrow" style={{ color: 'var(--blue-mist)' }}>Let&rsquo;s Get Started</span>
             <h2>Let&rsquo;s talk through your goals</h2>
             <p>
-              I&rsquo;d be happy to discuss your initial goals and guide you toward a 1:1
-              training plan that works for you and your life.
+              I&rsquo;d be happy to discuss your initial goals and guide you toward a
+              training plan that works best for you and your life.
             </p>
             <div className="btn-row center">
               <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>

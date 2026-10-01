@@ -149,9 +149,9 @@ em { font-style: italic; }
 .btn-ghost:hover { background: var(--surface); color: var(--text-primary); }
 /* On blue bands, ghost/outline switch to light ink */
 .band-blue .btn-outline, .band-soft .btn-outline,
-.tint-blue .btn-outline { border-color: #fff; color: #fff; }
+.tint-blue .btn-outline, .hero .btn-outline { border-color: #fff; color: #fff; }
 .band-blue .btn-outline:hover, .band-soft .btn-outline:hover,
-.tint-blue .btn-outline:hover { background: #fff; color: var(--blue-deep); }
+.tint-blue .btn-outline:hover, .hero .btn-outline:hover { background: #fff; color: var(--blue-deep); }
 .band-blue .btn-ghost, .band-soft .btn-ghost, .tint-blue .btn-ghost {
   color: #fff; border-color: rgba(255, 255, 255, 0.5);
 }

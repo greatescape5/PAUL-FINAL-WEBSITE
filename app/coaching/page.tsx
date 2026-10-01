@@ -31,9 +31,11 @@ export default async function CoachingPage() {
           <p className="lead" style={{ margin: '0 auto' }}>
             Monthly coaching built around your life — from smart programming and
             accountability to full 1:1 support. Start where you are and move up
-            as you go. Prefer a one-time plan?{' '}
-            <Link href="/programs">See the programs</Link>.
+            as you go. Prefer a one-time plan?
           </p>
+          <div className="btn-row center" style={{ marginTop: 22 }}>
+            <Link href="/programs" className="btn btn-outline">See the programs</Link>
+          </div>
         </div>
       </section>
 
@@ -50,7 +52,7 @@ export default async function CoachingPage() {
             <h2>Let&rsquo;s figure it out together</h2>
             <p>
               Tell me your goals and where you&rsquo;re starting from, and I&rsquo;ll
-              point you to the right fit — no pressure.
+              point you to the right fit.
             </p>
             <div className="btn-row center">
               <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>

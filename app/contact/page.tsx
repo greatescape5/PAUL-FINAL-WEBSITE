@@ -37,8 +37,7 @@ export default function ContactPage() {
               <h1>Start your journey with <em>1:1 Online Fitness Coaching</em></h1>
               <p style={{ maxWidth: 520 }}>
                 Take the first steps toward a healthier, more capable lifestyle —
-                geared toward prioritizing your holistic, everyday health and fitness
-                needs.
+                geared toward prioritizing your holistic, everyday needs.
               </p>
             </div>
           </div>

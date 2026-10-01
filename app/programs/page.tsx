@@ -27,12 +27,14 @@ export default async function ProgramsPage() {
       <section className="hero">
         <div className="container center">
           <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>One-Time Programs</span>
-          <h1>Buy once. Train on your own schedule.</h1>
+          <h1>Invest once. Train on your own schedule.</h1>
           <p className="lead" style={{ margin: '0 auto' }}>
             Structured, done-for-you programs you purchase once — pick the gym or
-            at-home version and go at your own pace. Ready to level up?{' '}
-            <Link href="/coaching">See the coaching plans</Link>.
+            at-home version and go at your own pace. Ready to flow together?
           </p>
+          <div className="btn-row center" style={{ marginTop: 22 }}>
+            <Link href="/coaching" className="btn btn-outline">See the coaching plans</Link>
+          </div>
         </div>
       </section>
 
