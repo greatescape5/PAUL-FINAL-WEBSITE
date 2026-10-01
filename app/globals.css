@@ -302,7 +302,11 @@ em { font-style: italic; }
 
 /* The Approach — blue cards with circular photos on a light lilac field */
 .approach-section { background: var(--lilac); }
-.approach-head { color: var(--blue); font-weight: 400; font-size: clamp(1.8rem, 3.6vw, 2.9rem); line-height: 1.16; max-width: 20ch; margin: 0 auto; text-wrap: balance; }
+.approach-head {
+  color: var(--blue); font-family: var(--font-logo), Georgia, 'Times New Roman', serif;
+  font-weight: 600; font-size: clamp(2.1rem, 4.4vw, 3.4rem); line-height: 1.12;
+  letter-spacing: 0.01em; max-width: 20ch; margin: 0 auto; text-wrap: balance;
+}
 .approach-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; max-width: 1000px; margin: 0 auto; }
 .approach-card {
   background: var(--blue-soft); border-radius: 20px;

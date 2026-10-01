@@ -1,6 +1,16 @@
 import type { Metadata } from 'next';
+import { Cormorant_Garamond } from 'next/font/google';
 import './globals.css';
 import SiteHeader from '@/components/SiteHeader';
+
+// Elegant serif matching the Flow Motion logo wordmark — used for select display
+// headings. The body stays on the Helvetica system stack.
+const logoFont = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['500', '600'],
+  variable: '--font-logo',
+  display: 'swap',
+});
 import SiteFooter from '@/components/SiteFooter';
 import PageTransition from '@/components/PageTransition';
 import NewsletterPopup from '@/components/NewsletterPopup';
@@ -46,7 +56,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={logoFont.variable}>
       <body>
         <JsonLd data={websiteSchema()} />
         <SiteHeader />
