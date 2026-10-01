@@ -23,11 +23,11 @@ const BENEFITS = [
   },
 ];
 
-// The three-word methodology — each card carries a circular photo.
+// The approach — each card carries a circular photo.
 const PILLARS = [
-  { k: 'Simple', text: 'A simple methodology promotes progress, is easier to follow, and is sustainable.', img: '/photos/simple.jpg' },
-  { k: 'Productive', text: 'No BS — a balanced, practical approach that produces real results.', img: '/photos/productive.jpg' },
-  { k: 'Enjoyable', text: 'Create fun in the exercise process and celebrate positive change along the way.', img: '/photos/enjoyable.jpg' },
+  { k: 'The Right Plan for YOU', text: 'Understanding your lifestyle, mentality towards diet & exercise, and availability to commit.', img: '/photos/simple.jpg' },
+  { k: 'Effective & Sustainable Behavior', text: 'Reliable habits that promote healthy living for life; always learning & evolving.', img: '/photos/productive.jpg' },
+  { k: 'Support', text: 'Adaptability, accountability, and structure to navigate fitness when life happens; a coach invested in your success.', img: '/photos/enjoyable.jpg' },
 ];
 
 export default function HomePage() {
@@ -133,8 +133,7 @@ export default function HomePage() {
       <section className="section approach-section">
         <div className="container">
           <div className="center" style={{ marginBottom: 46 }}>
-            <span className="eyebrow">The Approach</span>
-            <h2 className="approach-head">Maintaining your health is a lifelong effort and I&rsquo;m here to help</h2>
+            <h2 className="approach-head">Flow To Get There<br />Flow Together</h2>
           </div>
           <div className="approach-cards">
             {PILLARS.map((p) => (
