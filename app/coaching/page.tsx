@@ -31,15 +31,15 @@ export default async function CoachingPage() {
           <p className="lead" style={{ margin: '0 auto' }}>
             Monthly coaching built around your life — from smart programming and
             accountability to full 1:1 support. Start where you are and move up
-            as you go. Prefer a one-time plan?
+            as you go. Ready to flow together?
           </p>
           <div className="btn-row center" style={{ marginTop: 22 }}>
-            <Link href="/programs" className="btn btn-outline">See the programs</Link>
+            <a href="#packages" className="btn btn-outline">See the Plans</a>
           </div>
         </div>
       </section>
 
-      <section className="section band-pale">
+      <section id="packages" className="section band-pale anchor-offset">
         <div className="container">
           <ProgramGrid programs={programs} emptyNote="Coaching plans are coming soon — check back shortly." />
         </div>

@@ -33,12 +33,12 @@ export default async function ProgramsPage() {
             at-home version and go at your own pace. Ready to flow together?
           </p>
           <div className="btn-row center" style={{ marginTop: 22 }}>
-            <Link href="/coaching" className="btn btn-outline">See the coaching plans</Link>
+            <a href="#packages" className="btn btn-outline">See the Programs</a>
           </div>
         </div>
       </section>
 
-      <section className="section band-pale">
+      <section id="packages" className="section band-pale anchor-offset">
         <div className="container">
           <ProgramGrid programs={programs} emptyNote="Programs are coming soon — check back shortly." />
         </div>
