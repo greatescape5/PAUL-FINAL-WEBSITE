@@ -29,8 +29,8 @@ export default async function ProgramsPage() {
           <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>One-Time Programs</span>
           <h1>Invest once. Train on your own schedule.</h1>
           <p className="lead" style={{ margin: '0 auto' }}>
-            Structured, done-for-you programs you purchase once — pick the gym or
-            at-home version and go at your own pace. Ready to flow together?
+            Structured, done-for-you programs that you invest in once — pick the gym
+            or at-home version and go at your own pace. Ready to flow together?
           </p>
           <div className="btn-row center" style={{ marginTop: 22 }}>
             <a href="#packages" className="btn btn-outline">See the Programs</a>
