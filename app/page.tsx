@@ -72,7 +72,7 @@ export default function HomePage() {
           <div className="advantage-grid">
             <div className="advantage-head">
               <span className="eyebrow">1:1 Personal Training Advantage</span>
-              <h2>A personal training experience, with the freedom your life demands.</h2>
+              <h2>A personal training experience that adapts to your life&rsquo;s demands.</h2>
             </div>
             <div className="advantage-points">
               <div className="point">
@@ -111,12 +111,12 @@ export default function HomePage() {
                 <p>
                   Physical freedom is the ability to move through your environment
                   without pain. It&rsquo;s the strength to hike a mountain and the
-                  mobility to pick someone off the floor.
+                  mobility to pick something off the floor.
                 </p>
                 <p>
-                  Through an integrated exercise routine, we enhance both life&rsquo;s
-                  joys and its necessities. Improving <em>physical freedom</em> without
-                  dedicating your life to the gym.
+                  Through an integrated diet and exercise routine, we enhance both
+                  life&rsquo;s joys and its necessities. Improving <em>physical
+                  freedom</em> without dedicating your life to the gym.
                 </p>
               </div>
             </div>

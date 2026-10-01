@@ -32,35 +32,15 @@ export default function AboutPage() {
               <span className="eyebrow">Flow to get there. Flow Together.</span>
               <h1>Build lean muscle, lose body fat, and feel your <em>best</em>.</h1>
               <p style={{ maxWidth: 520 }}>
-                Online fitness coaching provides custom exercise and nutrition
-                programs, direct communication &amp; support, and guidance in every
-                health- and fitness-related area. Simply put, <em>a coach dedicated
-                to your fitness.</em>
+                Online fitness coaching bridges the gap between knowledge and
+                execution, with custom diet and exercise plans, direct support, and
+                guidance in every fitness-related area. Simply put, <em>a coach
+                dedicated to your fitness.</em>
               </p>
               <div className="btn-row" style={{ marginTop: 10 }}>
                 <Link href="/contact#get-in-touch" className="btn btn-primary">Start The Conversation</Link>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIAL */}
-      <section className="section band-blue">
-        <div className="container">
-          <div className="quote">
-            <span className="eyebrow">What Clients Say</span>
-            <blockquote>
-              &ldquo;Paul&rsquo;s personal training is like a five-star concierge
-              service. I hadn&rsquo;t trained with a virtual personal trainer before —
-              Paul is anything but virtual. He&rsquo;s very engaged, from the workout
-              and communication to goal setting, accountability, nutrition, coaching,
-              and encouragement. Training at home with Paul has given me next-level
-              freedom and the personal support I was missing. My favorite thing is how
-              intuitive he is — strong at coaching through the lows as well as the
-              highs. Highly recommend.&rdquo;
-            </blockquote>
-            <div className="who">— Bonnie Wright</div>
           </div>
         </div>
       </section>
@@ -114,6 +94,26 @@ export default function AboutPage() {
                 supports lasting health.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIAL */}
+      <section className="section band-blue">
+        <div className="container">
+          <div className="quote">
+            <span className="eyebrow">What Clients Say</span>
+            <blockquote>
+              &ldquo;Paul&rsquo;s personal training is like a five-star concierge
+              service. I hadn&rsquo;t trained with a virtual personal trainer before —
+              Paul is anything but virtual. He&rsquo;s very engaged, from the workout
+              and communication to goal setting, accountability, nutrition, coaching,
+              and encouragement. Training at home with Paul has given me next-level
+              freedom and the personal support I was missing. My favorite thing is how
+              intuitive he is — strong at coaching through the lows as well as the
+              highs. Highly recommend.&rdquo;
+            </blockquote>
+            <div className="who">— Bonnie Wright</div>
           </div>
         </div>
       </section>

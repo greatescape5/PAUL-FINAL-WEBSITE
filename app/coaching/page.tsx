@@ -27,7 +27,7 @@ export default async function CoachingPage() {
       <section className="hero">
         <div className="container center">
           <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>Ongoing Coaching</span>
-          <h1>Coaching that grows with you</h1>
+          <h1>Start where you are and adapt as you go</h1>
           <p className="lead" style={{ margin: '0 auto' }}>
             Monthly coaching built around your life — from smart programming and
             accountability to full 1:1 support. Start where you are and move up
