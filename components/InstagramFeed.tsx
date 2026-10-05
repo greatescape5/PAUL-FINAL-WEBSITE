@@ -2,14 +2,9 @@ import { BUSINESS } from '@/lib/site';
 
 const IG_URL = BUSINESS.social.instagram;
 
-// Tiles for the "Follow me on Instagram" strip.
-//
-// This is the interim, always-works version: curated photos that link to the
-// profile. To show his ACTUAL latest posts (auto-updating), connect a feed
-// widget (e.g. behold.so or lightwidget.com — both free) to his Instagram once,
-// then drop the widget embed in place of this <div className="ig-feed">…</div>.
-// The section chrome (band, heading, CTA) stays the same either way.
-const TILES = [
+// Curated fallback tiles — shown until a live feed is connected, or if the feed
+// can't be reached. They link to the profile.
+const FALLBACK = [
   '/photos/headshot.png',
   '/photos/coaching.png',
   '/photos/trainer-rack.png',
@@ -18,7 +13,40 @@ const TILES = [
   '/photos/snow.png',
 ];
 
-export default function InstagramFeed() {
+type Tile = { img: string; href: string; alt: string };
+
+// Pull the latest posts from a Behold.so feed (https://behold.so). Create a free
+// feed there (connect the Instagram account once), then set BEHOLD_FEED_ID in the
+// environment. Returns null if not configured or unreachable, so the section
+// falls back to the curated tiles and never breaks.
+async function fetchLivePosts(): Promise<Tile[] | null> {
+  const id = process.env.BEHOLD_FEED_ID;
+  if (!id) return null;
+  try {
+    const res = await fetch(`https://feeds.behold.so/${id}`, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const posts: any[] = Array.isArray(data) ? data : (data.posts ?? []);
+    const tiles = posts.slice(0, 6).map((p): Tile => {
+      const img =
+        p?.sizes?.medium?.mediaUrl ||
+        p?.sizes?.small?.mediaUrl ||
+        (String(p?.mediaType).toUpperCase() === 'VIDEO' ? p?.thumbnailUrl : p?.mediaUrl) ||
+        p?.mediaUrl ||
+        p?.thumbnailUrl;
+      const caption = (p?.prunedCaption || p?.caption || '').toString().slice(0, 120);
+      return { img, href: p?.permalink || IG_URL, alt: caption };
+    }).filter((t) => !!t.img);
+    return tiles.length ? tiles : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function InstagramFeed() {
+  const live = await fetchLivePosts();
+  const tiles: Tile[] = live ?? FALLBACK.map((src) => ({ img: src, href: IG_URL, alt: '' }));
+
   return (
     <section className="section band-blue ig-feed-section">
       <div className="container">
@@ -28,16 +56,16 @@ export default function InstagramFeed() {
         </div>
 
         <div className="ig-feed">
-          {TILES.map((src, i) => (
+          {tiles.map((t, i) => (
             <a
               key={i}
               className="ig-tile"
-              href={IG_URL}
+              href={t.href}
               target="_blank"
               rel="noopener"
-              aria-label={`${BUSINESS.instagramHandle} on Instagram`}
+              aria-label={t.alt || `${BUSINESS.instagramHandle} on Instagram`}
             >
-              <img src={src} alt="" loading="lazy" />
+              <img src={t.img} alt={t.alt} loading="lazy" />
               <span className="ig-tile-ic" aria-hidden="true">
                 <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.6" cy="6.4" r="1.1" fill="currentColor" stroke="none"/></svg>
               </span>
