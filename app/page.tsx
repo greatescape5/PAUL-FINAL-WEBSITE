@@ -26,8 +26,8 @@ const BENEFITS = [
 // The approach — each card carries a circular photo.
 const PILLARS = [
   { k: 'The Right Plan for YOU', text: 'Understanding your lifestyle, mentality towards diet & exercise, and availability to commit.', img: '/photos/plan-food.jpg' },
-  { k: 'Effective & Sustainable Behavior', text: 'Reliable habits that promote healthy living for life; always learning & evolving.', img: '/photos/productive.jpg' },
-  { k: 'Support', text: 'Adaptability, accountability, and structure to navigate fitness when life happens; a coach invested in your success.', img: '/photos/enjoyable.jpg' },
+  { k: 'Effective & Sustainable Behavior', text: 'Reliable habits that promote healthy living for life; always learning & evolving.', img: '/photos/squat-rack.jpg' },
+  { k: 'Support', text: 'Adaptability, accountability, and structure to navigate fitness when life happens; a coach invested in your success.', img: '/photos/support-gym.jpg' },
 ];
 
 export default function HomePage() {
