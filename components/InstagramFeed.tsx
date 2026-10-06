@@ -15,12 +15,15 @@ const FALLBACK = [
 
 type Tile = { img: string; href: string; alt: string };
 
-// Pull the latest posts from a Behold.so feed (https://behold.so). Create a free
-// feed there (connect the Instagram account once), then set BEHOLD_FEED_ID in the
-// environment. Returns null if not configured or unreachable, so the section
-// falls back to the curated tiles and never breaks.
+// Behold.so feed for @flow.motionpt. The feed ID is public (it ships in the
+// embed snippet), so it's baked in as the default; set BEHOLD_FEED_ID in the
+// environment to point the strip at a different feed without a code change.
+const DEFAULT_FEED_ID = 'uHY6qA70S7wf8SgOS6Lz';
+
+// Pull the latest posts from the Behold.so JSON feed. Returns null if the feed
+// is unreachable, so the section falls back to the curated tiles and never breaks.
 async function fetchLivePosts(): Promise<Tile[] | null> {
-  const id = process.env.BEHOLD_FEED_ID;
+  const id = process.env.BEHOLD_FEED_ID || DEFAULT_FEED_ID;
   if (!id) return null;
   try {
     const res = await fetch(`https://feeds.behold.so/${id}`, { next: { revalidate: 3600 } });
