@@ -24,9 +24,9 @@ export default function AboutPage() {
           <div className="split">
             <div
               className="split-photo"
-              style={{ ['--split-image' as string]: "url('/photos/headshot.png')" }}
+              style={{ ['--split-image' as string]: "url('/photos/paul-and-sol.jpg')" }}
               role="img"
-              aria-label="Your coach at the gym"
+              aria-label="Paul with his dog Sol"
             />
             <div className="split-copy">
               <span className="eyebrow">Flow to get there. Flow Together.</span>
@@ -49,7 +49,7 @@ export default function AboutPage() {
       <section className="section">
         <div className="container">
           <div className="media-row">
-            <div className="media-photo" style={{ ['--photo' as string]: "url('/photos/hiking.png')" }} />
+            <div className="media-photo" style={{ ['--photo' as string]: "url('/photos/ski.jpg')" }} />
             <div>
               <span className="eyebrow">The Philosophy</span>
               <h2>Fitness that fits your life</h2>
