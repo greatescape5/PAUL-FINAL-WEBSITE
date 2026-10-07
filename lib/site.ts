@@ -17,7 +17,7 @@ export const BUSINESS = {
   // Contact
   phoneDisplay: '208-627-8025',
   phoneE164: '+12086278025',
-  email: 'sundquist.personaltraining@gmail.com',
+  email: 'paul@flowmotionpersonaltraining.com',
 
   // He coaches remotely — city/region only, no street address.
   address: {
