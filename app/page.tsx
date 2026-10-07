@@ -59,7 +59,7 @@ export default function HomePage() {
             </div>
             <div className="collage" aria-hidden="true">
               <span className="collage-blob" />
-              <img className="collage-photo p1" src="/photos/headshot.png" alt="" />
+              <img className="collage-photo p1" src="/photos/headshot2.jpg" alt="" />
               <img className="collage-photo p2" src="/photos/snow.png" alt="" />
             </div>
           </div>
