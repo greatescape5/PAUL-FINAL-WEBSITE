@@ -7,7 +7,7 @@ import CompleteFollowUpSheet from '@/components/crm/CompleteFollowUpSheet';
 import CompleteCheckInSheet from '@/components/crm/CompleteCheckInSheet';
 import {
   getContact, setLifecycle, undoLastChange, scheduleRateChange, setRateNow, addNote,
-  setFollowUp, clearReview, setStage, getStages, getTiers,
+  setFollowUp, clearReview, updateContactInfo, setStage, getStages, getTiers,
   getCheckIns, addCheckIn, deleteCheckIn, checkInNoteLabels,
   getFollowUps,
   LIFECYCLE_LABEL, LIFECYCLE_COLOR, LIFECYCLE_ORDER,
@@ -57,7 +57,7 @@ function activityText(a: Activity): { kind: string; text: string } {
   }
 }
 
-type Sheet = null | 'status' | 'followup' | 'rate' | 'note';
+type Sheet = null | 'status' | 'followup' | 'rate' | 'note' | 'edit';
 
 export default function ContactDetailPage() {
   const params = useParams<{ id: string }>();
@@ -191,6 +191,7 @@ export default function ContactDetailPage() {
           <button className="action-btn" onClick={() => setSheet('followup')}>Set follow-up</button>
           <button className="action-btn" onClick={() => setSheet('rate')}>Schedule rate change</button>
           <button className="action-btn" onClick={() => setSheet('note')}>Add note</button>
+          <button className="action-btn" onClick={() => setSheet('edit')}>Edit info</button>
         </div>
       </div>
 
@@ -413,6 +414,9 @@ function ActionSheet({
   const [effective, setEffective] = useState(today());
   const [reason, setReason] = useState('');
   const [stageId, setStageId] = useState<string>(c.stage_id ?? '');
+  const [fullName, setFullName] = useState(c.full_name);
+  const [email, setEmail] = useState(c.email ?? '');
+  const [phone, setPhone] = useState(c.phone ?? '');
 
   const isCustomRate = rateTierId === '__custom';
   const selectedTier = tiers.find((t) => t.id === rateTierId);
@@ -556,6 +560,36 @@ function ActionSheet({
             <div className="sheet-actions">
               <button className="ghost" onClick={onClose}>Cancel</button>
               <button className="go" disabled={busy || !note.trim()} onClick={() => onDone(() => addNote(c.id, note.trim()))}>Save</button>
+            </div>
+          </>
+        )}
+
+        {kind === 'edit' && (
+          <>
+            <h3>Edit contact info</h3>
+            <p className="hint">Fill in details you didn&rsquo;t have when you first added them.</p>
+            <div className="field">
+              <label>Name</label>
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" />
+            </div>
+            <div className="field">
+              <label>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+            </div>
+            <div className="field">
+              <label>Phone</label>
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-5555" />
+            </div>
+            <div className="sheet-actions">
+              <button className="ghost" onClick={onClose}>Cancel</button>
+              <button className="go" disabled={busy || !fullName.trim()}
+                onClick={() => onDone(() => updateContactInfo(c.id, {
+                  full_name: fullName.trim(),
+                  email: email.trim() || null,
+                  phone: phone.trim() || null,
+                }))}>
+                Save
+              </button>
             </div>
           </>
         )}

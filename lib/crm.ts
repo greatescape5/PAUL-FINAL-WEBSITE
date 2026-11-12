@@ -233,6 +233,18 @@ export async function clearReview(contactId: string) {
   if (error) throw error
 }
 
+/** Edit basic contact details — e.g. filling in an email/phone that was blank
+ *  when the contact was first added by name only. */
+export async function updateContactInfo(contactId: string, patch: {
+  full_name?: string
+  email?: string | null
+  phone?: string | null
+}) {
+  const { error } = await supabase
+    .from('contacts').update(patch).eq('id', contactId)
+  if (error) throw error
+}
+
 // ---------------------------------------------------------------------------
 // Queries — always against v_contacts, never the base table
 // ---------------------------------------------------------------------------
