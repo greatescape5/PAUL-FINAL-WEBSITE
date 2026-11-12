@@ -12,18 +12,18 @@ export const metadata: Metadata = {
 export default function ClientLoginPage() {
   return (
     <>
-      <section className="hero">
+      <section className="hero" style={{ padding: '52px 0 34px' }}>
         <div className="container center">
           <span className="eyebrow" style={{ color: 'var(--on-blue-dim)' }}>Members</span>
-          <h1>Client Login</h1>
+          <h1 style={{ margin: '6px 0 10px' }}>Client Login</h1>
           <p className="lead" style={{ margin: '0 auto' }}>
             Sign in to access your training, check-ins, and messages.
           </p>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container">
+      <section className="section" style={{ padding: '28px 0 64px' }}>
+        <div className="container" style={{ maxWidth: 620 }}>
           <ClientPortal />
         </div>
       </section>
