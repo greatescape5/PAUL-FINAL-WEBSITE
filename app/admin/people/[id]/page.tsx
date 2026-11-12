@@ -57,7 +57,7 @@ function activityText(a: Activity): { kind: string; text: string } {
   }
 }
 
-type Sheet = null | 'status' | 'followup' | 'rate' | 'note' | 'edit';
+type Sheet = null | 'status' | 'followup' | 'note' | 'edit';
 
 export default function ContactDetailPage() {
   const params = useParams<{ id: string }>();
@@ -192,7 +192,6 @@ export default function ContactDetailPage() {
           <button className="action-btn primary" onClick={() => setSheet('status')}>Change status</button>
           <button className="action-btn" onClick={() => setAddingCheckIn(true)}>Add check-in</button>
           <button className="action-btn" onClick={() => setSheet('followup')}>Set follow-up</button>
-          <button className="action-btn" onClick={() => setSheet('rate')}>Schedule rate change</button>
           <button className="action-btn" onClick={() => setSheet('note')}>Add note</button>
         </div>
       </div>
@@ -436,6 +435,10 @@ function ActionSheet({
   const rateChosen = lifecycle === 'client' && newRate != null && newRate !== (c.monthly_rate ?? null);
   const canSaveStatus = lifeChanged || stageChanged || rateChosen;
 
+  // Edit-info sheet: a rate change is optional; if chosen, it needs a date.
+  const rateChosenEdit = rateTierId !== '' && newRate != null;
+  const canSaveEdit = !!fullName.trim() && (!rateChosenEdit || !!effective);
+
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
@@ -516,42 +519,6 @@ function ActionSheet({
           </>
         )}
 
-        {kind === 'rate' && (
-          <>
-            <h3>Schedule rate change</h3>
-            <p className="hint">Appears on Today when due. You confirm it once you&rsquo;ve updated Stripe.</p>
-            <div className="field">
-              <label>New package</label>
-              <select value={rateTierId} onChange={(e) => setRateTierId(e.target.value)}>
-                <option value="" disabled>Choose a package…</option>
-                {tiers.map((t) => <option key={t.id} value={t.id}>{tierLabel(t)}</option>)}
-                <option value="__custom">Custom amount…</option>
-              </select>
-            </div>
-            {isCustomRate && (
-              <div className="field">
-                <label>Custom monthly rate ($)</label>
-                <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 299" autoFocus />
-              </div>
-            )}
-            <div className="field">
-              <label>Effective date</label>
-              <input type="date" value={effective} onChange={(e) => setEffective(e.target.value)} />
-            </div>
-            <div className="field">
-              <label>Reason (optional)</label>
-              <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. return to original price" />
-            </div>
-            <div className="sheet-actions">
-              <button className="ghost" onClick={onClose}>Cancel</button>
-              <button className="go" disabled={busy || newRate == null || !effective}
-                onClick={() => onDone(() => scheduleRateChange(c.id, newRate!, effective, reason || undefined))}>
-                Schedule
-              </button>
-            </div>
-          </>
-        )}
-
         {kind === 'note' && (
           <>
             <h3>Add note</h3>
@@ -582,14 +549,48 @@ function ActionSheet({
               <label>Phone</label>
               <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-5555" />
             </div>
+
+            <div className="field">
+              <label>Schedule a rate change (optional)</label>
+              <select value={rateTierId} onChange={(e) => setRateTierId(e.target.value)}>
+                <option value="">No rate change</option>
+                {tiers.map((t) => <option key={t.id} value={t.id}>{tierLabel(t)}</option>)}
+                <option value="__custom">Custom amount…</option>
+              </select>
+            </div>
+            {isCustomRate && (
+              <div className="field">
+                <label>Custom monthly rate ($)</label>
+                <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 299" />
+              </div>
+            )}
+            {rateChosenEdit && (
+              <>
+                <div className="field">
+                  <label>Effective date</label>
+                  <input type="date" value={effective} onChange={(e) => setEffective(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Reason (optional)</label>
+                  <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. return to original price" />
+                </div>
+                <p className="hint">The rate change appears on Today when due — confirm it once you&rsquo;ve updated Stripe.</p>
+              </>
+            )}
+
             <div className="sheet-actions">
               <button className="ghost" onClick={onClose}>Cancel</button>
-              <button className="go" disabled={busy || !fullName.trim()}
-                onClick={() => onDone(() => updateContactInfo(c.id, {
-                  full_name: fullName.trim(),
-                  email: email.trim() || null,
-                  phone: phone.trim() || null,
-                }))}>
+              <button className="go" disabled={busy || !canSaveEdit}
+                onClick={() => onDone(async () => {
+                  await updateContactInfo(c.id, {
+                    full_name: fullName.trim(),
+                    email: email.trim() || null,
+                    phone: phone.trim() || null,
+                  });
+                  if (rateChosenEdit && newRate != null && effective) {
+                    await scheduleRateChange(c.id, newRate, effective, reason || undefined);
+                  }
+                })}>
                 Save
               </button>
             </div>
