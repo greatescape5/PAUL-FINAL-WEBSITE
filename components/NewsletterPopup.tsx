@@ -13,23 +13,25 @@ export default function NewsletterPopup() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const onAdmin = pathname?.startsWith('/admin');
+  // Hide the invite on the CRM and on the client-login page (don't cover the
+  // sign-in form).
+  const suppressed = pathname?.startsWith('/admin') || pathname === '/client-login';
 
   useEffect(() => {
-    if (onAdmin) return;
+    if (suppressed) return;
     let seen = false;
     try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch { /* ignore */ }
     if (seen) return;
     const t = setTimeout(() => setOpen(true), SHOW_AFTER_MS);
     return () => clearTimeout(t);
-  }, [onAdmin, pathname]);
+  }, [suppressed, pathname]);
 
   function dismiss() {
     setOpen(false);
     try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* ignore */ }
   }
 
-  if (onAdmin || !open) return null;
+  if (suppressed || !open) return null;
 
   return (
     <div className="newsletter-pop-backdrop" onClick={dismiss} role="presentation">
