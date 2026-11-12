@@ -161,12 +161,15 @@ export default function ContactDetailPage() {
               {c.stage_name && c.lifecycle === 'lead' && <span>Stage: {c.stage_name}</span>}
             </div>
           </div>
-          {(c.lifecycle === 'client' || c.lifecycle === 'paused') && (
-            <div style={{ textAlign: 'right' }}>
-              <div className="rate-big">{money(c.monthly_rate)}</div>
-              <div className="meta" style={{ color: 'var(--crm-ink-soft)', fontSize: '0.85rem' }}>per month · {c.payment_method}</div>
-            </div>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+            <button className="action-btn primary" onClick={() => setSheet('edit')}>Edit info</button>
+            {(c.lifecycle === 'client' || c.lifecycle === 'paused') && (
+              <div style={{ textAlign: 'right' }}>
+                <div className="rate-big">{money(c.monthly_rate)}</div>
+                <div className="meta" style={{ color: 'var(--crm-ink-soft)', fontSize: '0.85rem' }}>per month · {c.payment_method}</div>
+              </div>
+            )}
+          </div>
         </div>
 
         {c.expected_return && c.lifecycle === 'paused' && (
@@ -191,7 +194,6 @@ export default function ContactDetailPage() {
           <button className="action-btn" onClick={() => setSheet('followup')}>Set follow-up</button>
           <button className="action-btn" onClick={() => setSheet('rate')}>Schedule rate change</button>
           <button className="action-btn" onClick={() => setSheet('note')}>Add note</button>
-          <button className="action-btn" onClick={() => setSheet('edit')}>Edit info</button>
         </div>
       </div>
 
